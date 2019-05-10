@@ -1,0 +1,41 @@
+sudo: false
+dist: xenial
+language: python
+
+install:
+- pip install pytest black mypy flake8
+
+script:
+- $TEST_CMD
+
+matrix:
+  include:
+    - name: "black"
+      python: 3.6
+      env:
+        - TEST_CMD="black --check sqlvalidator/"
+    - name: "mypy"
+      python: 3.6
+      env:
+        - TEST_CMD="mypy --ignore-missing-imports sqlvalidator/"
+    - name: "flake8"
+      python: 3.6
+      env:
+        - TEST_CMD="flake8 --max-line-length=88 --ignore=E203 sqlvalidator/"
+
+    - name: "tests python2.7"
+      python: 2.7
+      env:
+        - TEST_CMD="pytest tests/"
+    - name: "tests python3.5"
+      python: 3.5
+      env:
+        - TEST_CMD="pytest tests/"
+    - name: "tests python3.6"
+      python: 3.6
+      env:
+        - TEST_CMD="pytest tests/"
+    - name: "tests python3.7"
+      python: 3.7
+      env:
+        - TEST_CMD="pytest tests/"
