@@ -1,15 +1,39 @@
 import os
 import sys
 import tokenize
-from typing import Tuple
+from typing import Tuple, IO
 
-from sqlvalidator import sql_formatter
+from . import sql_formatter
 
 
 SQLFORMAT_COMMENT = "sqlformat"
 
 
-def format_file(filename: str, check: bool) -> int:
+def extend_quotes_to_triple(sql_string):
+    quotes = None
+    possible_quotes = ('"""', "'''", '"', "'")
+    for possible_quote in possible_quotes:
+        if sql_string.startswith(possible_quote) and sql_string.endswith(
+            possible_quote
+        ):
+            quotes = possible_quote
+            break
+
+    assert quotes is not None, "Could not find quotes"
+
+    if len(quotes) > 1:
+        return sql_string
+
+    if quotes == "'":
+        new_quotes = "'''"
+    else:
+        new_quotes = '"""'
+    return "{quotes}{sql}{quotes}".format(
+        quotes=new_quotes, sql=sql_string.strip(quotes)
+    )
+
+
+def get_formatted_file_content(file: IO) -> Tuple[int, str]:
     count_changed_sql = 0
     tokens = []
 
@@ -45,6 +69,8 @@ def format_file(filename: str, check: bool) -> int:
 
         if next_token == tokenize.COMMENT and SQLFORMAT_COMMENT in next_token_value:
             formatted_sql = sql_formatter.format_sql(token_value)
+            if "\n" in formatted_sql:
+                formatted_sql = extend_quotes_to_triple(formatted_sql)
             tokens.append((token_type, formatted_sql, starting, ending, line))
             tokens += following_tokens
 
@@ -65,32 +91,36 @@ def format_file(filename: str, check: bool) -> int:
             tokens.append((token_type, token_value, starting, ending, line))
             tokens += following_tokens
 
-    with open(filename, "r") as f:
-        token_generator = tokenize.generate_tokens(f.readline)
-        for token_type, token_value, starting, ending, line in token_generator:
-            if token_type == tokenize.STRING:
-                handle_string_token(
-                    token_generator, token_type, token_value, starting, ending, line
-                )
-            else:
-                tokens.append((token_type, token_value, starting, ending, line))
-
-        if count_changed_sql > 0:
-            if not check:
-                output = tokenize.untokenize(tokens)
-                with open(filename, "w") as f:
-                    f.write(output)
-                starting_text = "reformatted"
-            else:
-                starting_text = "would reformat"
-
-            print(
-                "{} {} ({} changed SQL)".format(
-                    starting_text, filename, count_changed_sql
-                )
+    token_generator = tokenize.generate_tokens(file.readline)
+    for token_type, token_value, starting, ending, line in token_generator:
+        if token_type == tokenize.STRING:
+            handle_string_token(
+                token_generator, token_type, token_value, starting, ending, line
             )
+        else:
+            tokens.append((token_type, token_value, starting, ending, line))
 
-        return count_changed_sql
+    formatted_file_content = tokenize.untokenize(tokens)
+    return count_changed_sql, formatted_file_content
+
+
+def format_file(filename: str, check: bool) -> int:
+    with open(filename, "r") as file:
+        count_changed_sql, new_content = get_formatted_file_content(file)
+
+    if count_changed_sql > 0:
+        if not check:
+            with open(filename, "w") as f:
+                f.write(new_content)
+            starting_text = "reformatted"
+        else:
+            starting_text = "would reformat"
+
+        print(
+            "{} {} ({} changed SQL)".format(starting_text, filename, count_changed_sql)
+        )
+
+    return count_changed_sql
 
 
 def format_dir(dirname: str, check: bool) -> Tuple[int, int]:

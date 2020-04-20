@@ -54,7 +54,7 @@ def format_functions(sql: str) -> str:
                 # Keywords are upper cased by sqlparse
                 parameter = parameter.strip().lower()
             else:
-                parameter = parameter
+                parameter = parameter.strip()
             formatted_parameters.append(parameter)
 
         return "{}({})".format(formatted_function, ", ".join(formatted_parameters))

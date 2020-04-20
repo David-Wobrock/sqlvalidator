@@ -1,30 +1,43 @@
-import unittest
+import pytest
 
 from sqlvalidator.sql_formatter import format_sql
 
 
-class SQLFormattingTestCase(unittest.TestCase):
-    def test_format_select_star(self):
-        sql = "select * from table;"
-        expected = """
+def test_format_select_star():
+    sql = "select * from table_stmt;"
+    expected = """
 SELECT *
-FROM TABLE;
+FROM table_stmt;
 """
-        self.assertEqual(expected.strip(), format_sql(sql))
+    assert expected.strip() == format_sql(sql)
 
-    def test_upper_function_name(self):
-        sql = "select sum(column) from table;"
-        expected = """
+
+def test_upper_function_name():
+    sql = "select sum(column) from table_stmt;"
+    expected = """
 SELECT SUM(column)
-FROM TABLE;
+FROM table_stmt;
 """
-        self.assertEqual(expected.strip(), format_sql(sql))
+    assert expected.strip() == format_sql(sql)
 
-    def test_nested_function_name(self):
-        sql = "select ifnull(sum(column), 'NOTHING') from table;"
-        # TODO: SUM should be capitalised
-        expected = """
-SELECT IFNULL(sum(column), 'NOTHING')
-FROM TABLE;
+
+@pytest.mark.skip(
+    "'table' should be lower case, but upper case because it is a symbol and not correctly understood"
+)
+def test_format_from_symbol():
+    sql = "select * from table;"
+    expected = """
+SELECT *
+FROM table;
 """
-        self.assertEqual(expected.strip(), format_sql(sql))
+    assert expected.strip() == format_sql(sql)
+
+
+def test_nested_function_name():
+    sql = "select ifnull(sum(col), 'NOTHING') from table_stmt;"
+    # TODO: SUM should be capitalised
+    expected = """
+SELECT IFNULL(sum(col), 'NOTHING')
+FROM table_stmt;
+"""
+    assert expected.strip() == format_sql(sql)

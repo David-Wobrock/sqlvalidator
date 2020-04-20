@@ -3,7 +3,7 @@ dist: xenial
 language: python
 
 install:
-- pip install pytest black mypy flake8
+- pip install pytest==5.4.1 black==19.10b0 mypy==0.770 flake8==3.7.9
 
 script:
 - $TEST_CMD
@@ -13,29 +13,25 @@ matrix:
     - name: "black"
       python: 3.6
       env:
-        - TEST_CMD="black --check sqlvalidator/"
+        - TEST_CMD="black --check ."
     - name: "mypy"
       python: 3.6
       env:
-        - TEST_CMD="mypy --ignore-missing-imports sqlvalidator/"
+        - TEST_CMD="mypy --ignore-missing-imports ."
     - name: "flake8"
       python: 3.6
       env:
-        - TEST_CMD="flake8 --max-line-length=88 --ignore=E203 sqlvalidator/"
+        - TEST_CMD="flake8 --max-line-length=88 --ignore=E203 ."
 
-    - name: "tests python2.7"
-      python: 2.7
-      env:
-        - TEST_CMD="pytest tests/"
-    - name: "tests python3.5"
-      python: 3.5
-      env:
-        - TEST_CMD="pytest tests/"
-    - name: "tests python3.6"
+    - name: "Run tests with Python 3.6"
       python: 3.6
       env:
-        - TEST_CMD="pytest tests/"
-    - name: "tests python3.7"
+        - TEST_CMD="pytest"
+    - name: "Run tests with Python 3.7"
       python: 3.7
       env:
-        - TEST_CMD="pytest tests/"
+        - TEST_CMD="pytest"
+    - name: "Run tests with Python 3.8"
+      python: 3.8
+      env:
+        - TEST_CMD="pytest"

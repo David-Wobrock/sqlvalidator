@@ -7,7 +7,7 @@ __version__ = "0.0.2"
 
 def _main() -> None:
     parser = argparse.ArgumentParser(
-        description="SQL formatting (and basic schema less validation soon)"
+        description="SQL formatting and basic schemaless validation"
     )
     parser.add_argument("SRC", help="input. Either a file or a folder.")
     parser.add_argument(

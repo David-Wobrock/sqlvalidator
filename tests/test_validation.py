@@ -1,35 +1,40 @@
-import unittest
+import pytest
 
 import sqlvalidator
 
 
-class BasicSelectValidationTestCase(unittest.TestCase):
-    def assertValidSQL(self, sql):
-        sql_query = sqlvalidator.parse(sql)
-        self.assertTrue(sql_query.is_valid())
+def assert_valid_sql(sql):
+    sql_query = sqlvalidator.parse(sql)
+    assert sql_query.is_valid() is True
 
-    def assertInvalidSQL(self, sql):
-        sql_query = sqlvalidator.parse(sql)
-        self.assertFalse(sql_query.is_valid())
 
-    def test_select_star_from(self):
-        sql = "SELECT * FROM table"
-        self.assertValidSQL(sql)
+def assert_invalid_sql(sql):
+    sql_query = sqlvalidator.parse(sql)
+    assert sql_query.is_valid() is False
 
-    def test_select_field_from(self):
-        sql = "SELECT field FROM table"
-        self.assertValidSQL(sql)
 
-    def test_nested_select(self):
-        sql = "SELECT field FROM (SELECT * FROM table)"
-        self.assertValidSQL(sql)
+def test_select_star_from():
+    sql = "SELECT * FROM table"
+    assert_valid_sql(sql)
 
-    @unittest.skip("all sql statements are valid, validation not implemented yet")
-    def test_nested_select_without_field(self):
-        sql = "SELECT field2 FROM (SELECT field1 FROM table)"
-        self.assertInvalidSQL(sql)
 
-    @unittest.skip("all sql statements are valid, validation not implemented yet")
-    def test_nested_select_with_start(self):
-        sql = "SELECT * FROM (SELECT field1 FROM table)"
-        self.assertValidSQL(sql)
+def test_select_field_from():
+    sql = "SELECT field FROM table"
+    assert_valid_sql(sql)
+
+
+def test_nested_select():
+    sql = "SELECT field FROM (SELECT * FROM table)"
+    assert_valid_sql(sql)
+
+
+@pytest.mark.skip("all sql statements are valid, validation not implemented yet")
+def test_nested_select_without_field():
+    sql = "SELECT field2 FROM (SELECT field1 FROM table)"
+    assert_invalid_sql(sql)
+
+
+@pytest.mark.skip("all sql statements are valid, validation not implemented yet")
+def test_nested_select_with_start():
+    sql = "SELECT * FROM (SELECT field1 FROM table)"
+    assert_invalid_sql(sql)
