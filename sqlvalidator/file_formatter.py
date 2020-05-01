@@ -9,7 +9,7 @@ from . import sql_formatter
 SQLFORMAT_COMMENT = "sqlformat"
 
 
-def extend_quotes_to_triple(sql_string):
+def format_sql_string(sql_string):
     quotes = None
     possible_quotes = ('"""', "'''", '"', "'")
     for possible_quote in possible_quotes:
@@ -21,16 +21,19 @@ def extend_quotes_to_triple(sql_string):
 
     assert quotes is not None, "Could not find quotes"
 
-    if len(quotes) > 1:
-        return sql_string
+    sql_string_without_quotes = sql_string.strip(quotes)
+    formatted_sql = sql_formatter.format_sql(sql_string_without_quotes)
 
-    if quotes == "'":
-        new_quotes = "'''"
+    if len(quotes) == 1 and "\n" in formatted_sql:
+        # Need to change to triple quotes
+        if quotes == "'":
+            new_quotes = "'''"
+        else:
+            new_quotes = '"""'
     else:
-        new_quotes = '"""'
-    return "{quotes}{sql}{quotes}".format(
-        quotes=new_quotes, sql=sql_string.strip(quotes)
-    )
+        new_quotes = quotes
+
+    return "{quotes}{sql}{quotes}".format(quotes=new_quotes, sql=formatted_sql)
 
 
 def get_formatted_file_content(file: IO) -> Tuple[int, str]:
@@ -68,9 +71,7 @@ def get_formatted_file_content(file: IO) -> Tuple[int, str]:
             )
 
         if next_token == tokenize.COMMENT and SQLFORMAT_COMMENT in next_token_value:
-            formatted_sql = sql_formatter.format_sql(token_value)
-            if "\n" in formatted_sql:
-                formatted_sql = extend_quotes_to_triple(formatted_sql)
+            formatted_sql = format_sql_string(token_value)
             tokens.append((token_type, formatted_sql, starting, ending, line))
             tokens += following_tokens
 
