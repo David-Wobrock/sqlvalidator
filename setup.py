@@ -33,7 +33,6 @@ setup(
     author_email="david.wobrock@gmail.com",
     license="MIT",
     packages=find_packages(exclude=["tests/"]),
-    install_requires=["sqlparse==0.3.1"],
     extras_require={"test": ["pytest==5.4.1",]},
     keywords="python sql format formatter formatting validation validator validate automation",
     classifiers=[
