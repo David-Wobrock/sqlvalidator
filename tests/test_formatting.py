@@ -1,3 +1,5 @@
+import pytest
+
 from sqlvalidator.sql_formatter import format_sql
 
 
@@ -25,6 +27,12 @@ def test_nested_function_name():
 SELECT IFNULL(SUM(col), 'NOTHING')
 FROM table_stmt;
 """
+    assert expected.strip() == format_sql(sql)
+
+
+def test_no_from_statement():
+    sql = "select 1;"
+    expected = "SELECT 1;"
     assert expected.strip() == format_sql(sql)
 
 
@@ -62,5 +70,73 @@ SELECT
  col,
  col2
 FROM table_stmt;
+"""
+    assert expected.strip() == format_sql(sql)
+
+
+def test_parenthesis():
+    sql = "select (email,id), id from auth_user;"
+    expected = """
+SELECT
+ (email, id),
+ id
+FROM auth_user;
+"""
+    assert expected.strip() == format_sql(sql)
+
+
+@pytest.mark.skip()
+def test_basic_arithmetic():
+    sql = "select (1+1) add, 2*3, 9/3;"
+    expected = """
+SELECT
+ (1 + 1) add,
+ 2 * 3,
+ 9 / 3;
+"""
+    assert expected.strip() == format_sql(sql)
+
+
+def test_nested_queries():
+    sql = "select field from (select field from table_stmt);"
+    expected = """
+SELECT field
+FROM (
+ SELECT field
+ FROM table_stmt
+);
+"""
+    assert expected.strip() == format_sql(sql)
+
+
+def test_nested_queries_multiple_columns():
+    sql = "select field, f2 from (select field, f2 from table_stmt);"
+    expected = """
+SELECT
+ field,
+ f2
+FROM (
+ SELECT
+  field,
+  f2
+ FROM table_stmt
+);
+"""
+    assert expected.strip() == format_sql(sql)
+
+
+def test_two_nested_queries():
+    sql = "select field from (select field, f2 from (select * from t));"
+    expected = """
+SELECT field
+FROM (
+ SELECT
+  field,
+  f2
+ FROM (
+  SELECT *
+  FROM t
+ )
+);
 """
     assert expected.strip() == format_sql(sql)

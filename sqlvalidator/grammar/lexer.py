@@ -4,6 +4,9 @@ from sqlvalidator.grammar.sql import (
     Column,
     Alias,
     String,
+    Integer,
+    Parenthesis,
+    Table,
 )
 
 
@@ -100,8 +103,23 @@ class SelectStatementParser:
         expressions = ExpressionListParser.parse(iter(expression_tokens))
 
         if next_token == "from":
-            from_statement = next(tokens)  # FromStatementParser.parse(tokens)
+            from_statement = FromStatementParser.parse(tokens)
+        else:
+            from_statement = None
         return SelectStatement(expressions=expressions, from_statement=from_statement)
+
+
+class FromStatementParser:
+    @staticmethod
+    def parse(tokens):
+        next_token = next(tokens)
+        if next_token == "(":
+            argument_tokens = get_tokens_until_closing_parenthesis(tokens)
+            argument = SQLStatementParser.parse(iter(argument_tokens))
+            expression = Parenthesis(argument)
+        else:
+            expression = Table(next_token)
+        return expression
 
 
 class ExpressionListParser:
@@ -136,6 +154,15 @@ class ExpressionParser:
             next_token = next(tokens)  # final quote
             if main_token != next_token:
                 raise ParsingError("Did not find ending quote")
+            next_token = next(tokens, None)
+        elif main_token.isdigit():
+            expression = Integer(main_token)
+        elif main_token == "(":
+            argument_tokens = [next_token] + get_tokens_until_closing_parenthesis(
+                tokens
+            )
+            arguments = ExpressionListParser.parse(iter(argument_tokens))
+            expression = Parenthesis(*arguments)
             next_token = next(tokens, None)
         elif next_token is not None and next_token == "(":
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
