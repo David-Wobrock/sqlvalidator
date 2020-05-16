@@ -1,32 +1,72 @@
 # sqlvalidator
 
-SQL queries formatting (and soon basic schema less validation)
+SQL queries formatting, syntactic and semantic validation
 
-## Formatting
+## Command line usage
 
-Formatting can be used in 2 ways:
-* formatting Python files that contain SQL strings tagged with `# sqlformat` from the command line:
+For formatting SQL:
 
-`sqlvalidator --format myfile.py` or `sqlvalidator --format myproject/`
+_sql.py_
+```
+def fun():
+    return "select col1, column2 from table"  # sqlformat
+```
 
-* formatting Python strings that represent SQL:
+Command line:
+```
+$ sqlvalidator --format sql.py
+reformatted sql.py (1 changed SQL)
+1 file reformatted (1 changed SQL queries).
+```
 
-`sqlvalidator.format_sql("SELECT * FROM table")`
+_sql.py_
+```
+def fun():
+    return """
+SELECT
+ col1,
+ column2
+FROM table
+"""  # sqlformat
 
-Both output the same formatted string for the same input SQL.
+```
 
-One can verify that all files are correctly formatted using
-`sqlvalidator --check-format pyfile.py`
+The `sqlformat` comment is required to indicated to `sqlvalidator` that this string should be formatted.
 
-Which won't write the file back and just return a status code.
-Status code 0 means nothing would change.
-Status code 1 means some files would reformatted.
+One can verify also that the file would be reformatted or not:
+```
+$ sqlvalidator --check-format sql.py
+would reformat sql.py (1 changed SQL)
+1 file would be reformatted (1 changed SQL queries).
 
-## Validation
+$ sqlvalidator --format sql.py
+reformatted sql.py (1 changed SQL)
+1 file reformatted (1 changed SQL queries).
+```
 
-To be implemented yet, but should become the main added-value of this lib.
+```
+$ sqlvalidator --check-format sql.py
+No file would be reformatted.
 
-Suggested API:
+$ sqlvalidator --format sql.py
+No file reformatted.
+```
+
+`--check-format` won't write the file back and just return a status code:
+* Status code 0 means nothing would change.
+* Status code 1 means some files would reformatted.
+
+
+**Warning**: Since this library is an attempt to implement a SQL parser, major SQL constructs and syntax are still missing.
+
+## API
+
+### Formatting
+
+`formatted_sql = sqlvalidator.format_sql("SELECT * FROM table")`
+
+### Validation
+
 ```python
 import sqlvalidator
 
@@ -36,16 +76,28 @@ if not sql_query.is_valid():
     print(sql_query.errors)
 ```
 
+**Warning**: only limited test cases are currently handled by the validation
+
+_Details_:
+
+To be implemented yet, but should become the main added-value of this lib.
+
 Ideally, this package should provide a basic SQL validation:
 * not using a missing column
 * existing functions
 * correct aggregations
-* schema-less (not assume that table names and columns in those exist)
+* schemaless (not assume that table names and columns in those exist)
 * types correctness in functions
 
 (only on SELECT-statements)
 
-More advanced features:
-* depending on the backend (standard SQL, postgresql, BigQuery, Legacy BigQuery...)
-* Flexible internal SQL representation to do advanced validation
-* With provided schema (to validate that columns exist)
+### Internals
+
+#### Testing
+
+`pytest`
+
+#### Publishing
+
+* `python3 setup.py sdist bdist_wheel --universal`
+* `twine upload dist/django_migration_linter-X.Y.Z-py2.py3-none-any.whl dist/django-migration-linter-X.Y.Z.tar.gz`

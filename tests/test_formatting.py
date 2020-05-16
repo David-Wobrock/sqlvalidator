@@ -1,6 +1,6 @@
 import pytest
 
-from sqlvalidator.sql_formatter import format_sql
+from sqlvalidator import format_sql
 
 
 def test_format_select_star():

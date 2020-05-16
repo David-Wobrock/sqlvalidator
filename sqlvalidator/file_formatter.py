@@ -33,7 +33,15 @@ def format_sql_string(sql_string):
     else:
         new_quotes = quotes
 
-    return "{quotes}{sql}{quotes}".format(quotes=new_quotes, sql=formatted_sql)
+    if len(new_quotes) == 3 and "\n" in formatted_sql:
+        quoted_sql = "{quotes}\n{sql}\n{quotes}".format(
+            quotes=new_quotes, sql=formatted_sql
+        )
+    else:
+        quoted_sql = "{quotes}{sql}{quotes}".format(
+            quotes=new_quotes, sql=formatted_sql
+        )
+    return quoted_sql
 
 
 def get_formatted_file_content(file: IO) -> Tuple[int, str]:

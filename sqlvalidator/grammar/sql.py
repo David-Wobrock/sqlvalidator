@@ -34,6 +34,41 @@ class SelectStatement:
             statement_str += ";"
         return statement_str
 
+    def validate(self):
+        errors = []
+        if isinstance(self.from_statement, Parenthesis) and isinstance(
+            self.from_statement.args[0], SelectStatement
+        ):
+            known_fields = self.from_statement.args[0].known_fields
+        elif isinstance(self.from_statement, Table):
+            known_fields = {"*"}
+        else:
+            known_fields = set()
+
+        if "*" in known_fields:
+            return []
+
+        for e in self.expressions:
+            if isinstance(e, Column):
+                if e.value not in known_fields:
+                    errors.append("The column {} was not found".format(e.value))
+            elif isinstance(e, Alias) and isinstance(e.expression, Column):
+                if e.expression.value not in known_fields:
+                    errors.append(
+                        "The column {} was not found".format(e.expression.value)
+                    )
+        return errors
+
+    @property
+    def known_fields(self):
+        fields = []
+        for e in self.expressions:
+            if isinstance(e, Column):
+                fields.append(e.value)
+            elif isinstance(e, Alias):
+                fields.append(e.alias)
+        return fields
+
     def __eq__(self, other):
         return (
             self.from_statement == other.from_statement

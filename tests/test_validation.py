@@ -1,5 +1,3 @@
-import pytest
-
 import sqlvalidator
 
 
@@ -28,13 +26,21 @@ def test_nested_select():
     assert_valid_sql(sql)
 
 
-@pytest.mark.skip("all sql statements are valid, validation not implemented yet")
+def test_no_from():
+    sql = "SELECT 1, 'test'"
+    assert_valid_sql(sql)
+
+
 def test_nested_select_without_field():
     sql = "SELECT field2 FROM (SELECT field1 FROM table)"
     assert_invalid_sql(sql)
 
 
-@pytest.mark.skip("all sql statements are valid, validation not implemented yet")
 def test_nested_select_with_start():
     sql = "SELECT * FROM (SELECT field1 FROM table)"
+    assert_invalid_sql(sql)
+
+
+def test_no_from_with_field():
+    sql = "SELECT field"
     assert_invalid_sql(sql)
