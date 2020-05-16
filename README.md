@@ -100,4 +100,4 @@ Ideally, this package should provide a basic SQL validation:
 #### Publishing
 
 * `python3 setup.py sdist bdist_wheel --universal`
-* `twine upload dist/django_migration_linter-X.Y.Z-py2.py3-none-any.whl dist/django-migration-linter-X.Y.Z.tar.gz`
+* `twine upload dist/sqlvalidator-X.Y.Z-py2.py3-none-any.whl dist/sqlvalidator-X.Y.Z.tar.gz`
