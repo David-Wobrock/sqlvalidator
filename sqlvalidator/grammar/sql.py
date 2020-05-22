@@ -72,7 +72,8 @@ class SelectStatement:
 
     def __eq__(self, other):
         return (
-            self.from_statement == other.from_statement
+            type(self) == type(other)
+            and self.from_statement == other.from_statement
             and len(self.expressions) == len(other.expressions)
             and all(a == o for a, o in zip(self.expressions, other.expressions))
         )
@@ -86,7 +87,7 @@ class Expression:
         return str(self.value)
 
     def __eq__(self, other):
-        return self.value == other.value
+        return type(self) == type(other) and self.value == other.value
 
 
 class FunctionCall(Expression):
@@ -106,7 +107,8 @@ class FunctionCall(Expression):
 
     def __eq__(self, other):
         return (
-            self.function_name == other.function_name
+            type(self) == type(other)
+            and self.function_name == other.function_name
             and len(self.args) == len(other.args)
             and all(a == o for a, o in zip(self.args, other.args))
         )
@@ -141,8 +143,10 @@ class Parenthesis(Expression):
         return "({})".format(", ".join(map(str, self.args)))
 
     def __eq__(self, other):
-        return len(self.args) == len(other.args) and all(
-            a == o for a, o in zip(self.args, other.args)
+        return (
+            type(self) == type(other)
+            and len(self.args) == len(other.args)
+            and all(a == o for a, o in zip(self.args, other.args))
         )
 
 
@@ -158,7 +162,11 @@ class Alias(Expression):
         )
 
     def __eq__(self, other):
-        return self.expression == other.expression and self.alias == other.alias
+        return (
+            type(self) == type(other)
+            and self.expression == other.expression
+            and self.alias == other.alias
+        )
 
 
 class ArithmaticOperator(Expression):
@@ -172,7 +180,8 @@ class ArithmaticOperator(Expression):
 
     def __eq__(self, other):
         return (
-            self.operator == other.operator
+            (isinstance(other, type(self)) or isinstance(self, type(other)))
+            and self.operator == other.operator
             and len(self.args) == len(other.args)
             and all(a == o for a, o in zip(self.args, other.args))
         )
@@ -180,7 +189,7 @@ class ArithmaticOperator(Expression):
 
 class Addition(ArithmaticOperator):
     def __init__(self, *args):
-        super().__init__("+", args)
+        super().__init__("+", *args)
 
 
 class Table(Expression):

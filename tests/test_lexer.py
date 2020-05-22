@@ -1,5 +1,3 @@
-import pytest
-
 from sqlvalidator.grammar.lexer import (
     to_tokens,
     ExpressionParser,
@@ -68,9 +66,14 @@ def test_integer():
     assert ExpressionParser.parse(to_tokens("2")) == Integer(2)
 
 
-@pytest.mark.skip()
 def test_addition():
-    assert ExpressionParser.parse(to_tokens("2*4")) == Addition(Integer(2), Integer(4))
+    assert ExpressionParser.parse(to_tokens("2+4")) == Addition(Integer(2), Integer(4))
+
+
+def test_chained_addition():
+    assert ExpressionParser.parse(to_tokens("2+4+5")) == Addition(
+        Integer(2), Addition(Integer(4), Integer(5))
+    )
 
 
 def test_parenthesis():

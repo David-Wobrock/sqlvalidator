@@ -1,5 +1,3 @@
-import pytest
-
 from sqlvalidator import format_sql
 
 
@@ -85,7 +83,6 @@ FROM auth_user;
     assert expected.strip() == format_sql(sql)
 
 
-@pytest.mark.skip()
 def test_basic_arithmetic():
     sql = "select (1+1) add, 2*3, 9/3;"
     expected = """
@@ -93,6 +90,16 @@ SELECT
  (1 + 1) add,
  2 * 3,
  9 / 3;
+"""
+    assert expected.strip() == format_sql(sql)
+
+
+def test_chained_arithmetic():
+    sql = "select 1+1+1, 2*3-5"
+    expected = """
+SELECT
+ 1 + 1 + 1,
+ 2 * 3 - 5
 """
     assert expected.strip() == format_sql(sql)
 

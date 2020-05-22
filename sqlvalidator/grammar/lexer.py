@@ -7,6 +7,7 @@ from sqlvalidator.grammar.sql import (
     Integer,
     Parenthesis,
     Table,
+    ArithmaticOperator,
 )
 
 
@@ -82,7 +83,15 @@ def to_tokens(value: str):
                                     for w3 in split_with_sep(w2, ";"):
                                         for w4 in split_with_sep(w3, "("):
                                             for w5 in split_with_sep(w4, ")"):
-                                                yield w5.lower()
+                                                for w6 in split_with_sep(w5, "+"):
+                                                    for w7 in split_with_sep(w6, "-"):
+                                                        for w8 in split_with_sep(
+                                                            w7, "*"
+                                                        ):
+                                                            for w9 in split_with_sep(
+                                                                w8, "/"
+                                                            ):
+                                                                yield w9.lower()
 
 
 class SQLStatementParser:
@@ -164,6 +173,13 @@ class ExpressionParser:
             next_token = next(tokens, None)
         elif main_token.isdigit():
             expression = Integer(main_token)
+            if next_token and next_token in ("+", "-", "*", "/"):
+                left_hand = expression
+                symbol = next_token
+                right_hand = ExpressionParser.parse(tokens)
+                expression = ArithmaticOperator(symbol, left_hand, right_hand)
+                next_token = next(tokens, None)
+
         elif main_token == "(":
             argument_tokens = [next_token] + get_tokens_until_closing_parenthesis(
                 tokens

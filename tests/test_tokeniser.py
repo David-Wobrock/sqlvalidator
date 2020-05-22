@@ -21,3 +21,8 @@ def test_function_tokenizer():
 def test_semi_colon():
     value = "select * from t;"
     assert list(to_tokens(value)) == ["select", "*", "from", "t", ";"]
+
+
+def test_arithmetic():
+    value = "2+3*5/7-5"
+    assert list(to_tokens(value)) == ["2", "+", "3", "*", "5", "/", "7", "-", "5"]
