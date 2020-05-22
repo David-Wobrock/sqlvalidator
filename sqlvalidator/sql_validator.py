@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlvalidator.grammar.lexer import SQLStatementParser, to_tokens, ParsingError
 
 
@@ -5,7 +7,7 @@ class SQLQuery:
     def __init__(self, sql: str):
         self.sql = sql
         self.validated = False
-        self.errors = []
+        self.errors: List[str] = []
 
     def is_valid(self) -> bool:
         if not self.validated:

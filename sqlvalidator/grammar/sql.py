@@ -8,9 +8,10 @@ def transform(obj: Any) -> str:
 
 
 class SelectStatement:
-    def __init__(self, expressions, from_statement):
+    def __init__(self, expressions, from_statement, semi_colon: bool):
         self.expressions = expressions
         self.from_statement = from_statement
+        self.semi_colon = semi_colon
 
     def transform(self, is_subquery=False):
         if len(self.expressions) == 1:
@@ -30,7 +31,7 @@ class SelectStatement:
             statement_str += "\nFROM {}".format(from_str)
         if is_subquery:
             statement_str = " " + statement_str.replace("\n", "\n ")
-        else:
+        elif self.semi_colon:
             statement_str += ";"
         return statement_str
 

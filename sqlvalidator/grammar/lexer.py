@@ -79,7 +79,7 @@ def to_tokens(value: str):
                         else:
                             for w1 in elem3.split(" "):
                                 for w2 in split_with_sep(w1, ","):
-                                    for w3 in w2.strip().split(";"):
+                                    for w3 in split_with_sep(w2, ";"):
                                         for w4 in split_with_sep(w3, "("):
                                             for w5 in split_with_sep(w4, ")"):
                                                 yield w5.lower()
@@ -95,7 +95,7 @@ class SQLStatementParser:
 
 
 class SelectStatementParser:
-    keywords = ("from",)
+    keywords = ("from", ";")
 
     @classmethod
     def parse(cls, tokens):
@@ -104,9 +104,16 @@ class SelectStatementParser:
 
         if next_token == "from":
             from_statement = FromStatementParser.parse(tokens)
+            next_token = next(tokens, None)
         else:
             from_statement = None
-        return SelectStatement(expressions=expressions, from_statement=from_statement)
+
+        semi_colon = bool(next_token and next_token == ";")
+        return SelectStatement(
+            expressions=expressions,
+            from_statement=from_statement,
+            semi_colon=semi_colon,
+        )
 
 
 class FromStatementParser:
@@ -178,6 +185,7 @@ class ExpressionParser:
             and next_token != "'"
             and next_token != '"'
             and next_token != "`"
+            and next_token != ";"
         ):
             if next_token == "as":
                 with_as = True

@@ -2,7 +2,6 @@ import pytest
 
 from sqlvalidator.grammar.lexer import (
     to_tokens,
-    split_with_sep,
     ExpressionParser,
     FromStatementParser,
 )
@@ -17,23 +16,6 @@ from sqlvalidator.grammar.sql import (
     SelectStatement,
     Table,
 )
-
-
-def test_split_with_sep_one_element():
-    assert list(split_with_sep("a", ",")) == ["a"]
-
-
-def test_split_with_sep_one_sep():
-    assert list(split_with_sep(",", ",")) == [","]
-
-
-def test_split_with_sep():
-    assert list(split_with_sep("a,b", ",")) == ["a", ",", "b"]
-
-
-def test_tokenizer():
-    value = "foo('BAR FOZ')"
-    assert list(to_tokens(value)) == ["foo", "(", "'", "BAR FOZ", "'", ")"]
 
 
 def test_simple_function_parsing():
@@ -108,6 +90,8 @@ def test_from_subquery():
         to_tokens("(select field from table_stmt)")
     ) == Parenthesis(
         SelectStatement(
-            expressions=[Column("field")], from_statement=Table("table_stmt")
+            expressions=[Column("field")],
+            from_statement=Table("table_stmt"),
+            semi_colon=False,
         )
     )

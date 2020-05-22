@@ -140,3 +140,12 @@ FROM (
 );
 """
     assert expected.strip() == format_sql(sql)
+
+
+def test_assert_no_semi_colon():
+    sql = "select * from t"
+    expected = """
+SELECT *
+FROM t
+"""
+    assert expected.strip() == format_sql(sql)
