@@ -1,6 +1,7 @@
 from typing import List
 
-from sqlvalidator.grammar.lexer import SQLStatementParser, to_tokens, ParsingError
+from sqlvalidator.grammar.lexer import SQLStatementParser, ParsingError
+from sqlvalidator.grammar.tokeniser import to_tokens
 
 
 class SQLQuery:

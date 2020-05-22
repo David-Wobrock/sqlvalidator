@@ -1,5 +1,4 @@
 from sqlvalidator.grammar.lexer import (
-    to_tokens,
     ExpressionParser,
     FromStatementParser,
 )
@@ -14,6 +13,7 @@ from sqlvalidator.grammar.sql import (
     SelectStatement,
     Table,
 )
+from sqlvalidator.grammar.tokeniser import to_tokens
 
 
 def test_simple_function_parsing():

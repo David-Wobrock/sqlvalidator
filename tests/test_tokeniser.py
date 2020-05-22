@@ -1,4 +1,4 @@
-from sqlvalidator.grammar.lexer import to_tokens, split_with_sep
+from sqlvalidator.grammar.tokeniser import to_tokens, split_with_sep
 
 
 def test_split_with_sep_one_element():
