@@ -1,9 +1,10 @@
-sudo: false
-dist: xenial
 language: python
+os:
+  - linux
+  - windows
 
 install:
-- pip install pytest==5.4.1 black==19.10b0 mypy==0.770 flake8==3.7.9
+- pip install pytest==5.4.2 black==19.10b0 mypy==0.770 flake8==3.8.1
 
 script:
 - $TEST_CMD

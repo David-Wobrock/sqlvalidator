@@ -25,7 +25,7 @@ def get_long_description() -> str:
 setup(
     name="sqlvalidator",
     version=get_version(),
-    description="SQL queries formatting and basic schemaless validation",
+    description="SQL queries formatting, syntactic and semantic validation",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
     url="https://github.com/David-Wobrock/sqlvalidator",
@@ -33,7 +33,7 @@ setup(
     author_email="david.wobrock@gmail.com",
     license="MIT",
     packages=find_packages(exclude=["tests/"]),
-    extras_require={"test": ["pytest==5.4.1",]},
+    extras_require={"test": ["pytest==5.4.2",]},
     keywords="python sql format formatter formatting validation validator validate automation",
     classifiers=[
         "Development Status :: 3 - Alpha",
