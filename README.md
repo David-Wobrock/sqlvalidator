@@ -1,5 +1,8 @@
 # sqlvalidator
 
+[![Travis](https://travis-ci.org/David-Wobrock/sqlvalidator.svg?branch=master)](https://travis-ci.org/David-Wobrock/sqlvalidator)
+[![PyPI](https://img.shields.io/pypi/v/sqlvalidator.svg)](https://pypi.python.org/pypi/django-migration-linter/)
+
 SQL queries formatting, syntactic and semantic validation
 
 ## Command line usage
