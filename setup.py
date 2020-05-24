@@ -33,8 +33,13 @@ setup(
     author_email="david.wobrock@gmail.com",
     license="MIT",
     packages=find_packages(exclude=["tests/"]),
-    extras_require={"test": ["pytest==5.4.2",]},
-    keywords="python sql format formatter formatting validation validator validate automation",
+    extras_require={"test": ["pytest==5.4.2", ]},
+    keywords=(
+        "python sql format "
+        "formatter formatting "
+        "validation validator validate "
+        "automation"
+    ),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
