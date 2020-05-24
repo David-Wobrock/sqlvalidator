@@ -253,7 +253,7 @@ def test_select_distinct():
     assert actual == expected
 
 
-def test_select_distinct():
+def test_select_distinct_on():
     actual = SQLStatementParser.parse(to_tokens("SELECT DISTINCT ON (col) col"))
     expected = SelectStatement(
         select_distinct=True,

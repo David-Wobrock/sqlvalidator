@@ -311,7 +311,10 @@ FROM weather_reports;
 
 
 def test_distinct_on_multiple_fields():
-    sql = "SELECT DISTINCT ON (location, time) location, time, report FROM weather_reports;"
+    sql = (
+        "SELECT DISTINCT ON (location, time) location, time, report "
+        "FROM weather_reports;"
+    )
     expected = """
 SELECT DISTINCT ON (location, time)
  location,
