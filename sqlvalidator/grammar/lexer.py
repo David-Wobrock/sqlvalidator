@@ -37,7 +37,30 @@ class SelectStatementParser:
 
     @classmethod
     def parse(cls, tokens):
-        expression_tokens, next_token = get_tokens_until_one_of(tokens, cls.keywords)
+        first_expression_token = None
+        next_token = next(tokens)
+
+        select_all = select_distinct = False
+        select_distinct_on = None
+        if next_token == "all":
+            select_all = True
+        elif next_token == "distinct":
+            select_distinct = True
+            next_token = next(tokens)
+            if next_token == "on":
+                next(tokens)  # Consume parenthesis
+                distinct_on_tokens = get_tokens_until_closing_parenthesis(tokens)
+                select_distinct_on = ExpressionListParser.parse(
+                    iter(distinct_on_tokens)
+                )
+            else:
+                first_expression_token = next_token
+        else:
+            first_expression_token = next_token
+
+        expression_tokens, next_token = get_tokens_until_one_of(
+            tokens, cls.keywords, first_token=first_expression_token
+        )
         expressions = ExpressionListParser.parse(iter(expression_tokens))
 
         if next_token == "from":
@@ -54,6 +77,9 @@ class SelectStatementParser:
 
         semi_colon = bool(next_token and next_token == ";")
         return SelectStatement(
+            select_all=select_all,
+            select_distinct=select_distinct,
+            select_distinct_on=select_distinct_on,
             expressions=expressions,
             from_statement=from_statement,
             where_clause=where_clause,

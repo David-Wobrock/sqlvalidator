@@ -13,8 +13,8 @@ def get_tokens_until_closing_parenthesis(tokens):
     return argument_tokens
 
 
-def get_tokens_until_one_of(tokens, stop_words):
-    argument_tokens = []
+def get_tokens_until_one_of(tokens, stop_words, first_token=None):
+    argument_tokens = [first_token] if first_token is not None else []
     next_token = next(tokens, None)
     while next_token is not None and next_token not in stop_words:
         argument_tokens.append(next_token)

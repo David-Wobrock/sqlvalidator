@@ -284,7 +284,7 @@ def test_boolean_conditions_select_where():
 SELECT (col + 1) = 3 AND col2 = 4
 FROM t
 WHERE (col + 1) = 3 AND col2 = 4
-    """
+"""
     assert format_sql(sql) == expected.strip()
 
 
@@ -294,5 +294,29 @@ def test_parenthesis_boolean_conditions_select_where():
 SELECT ((col + 1) = 3 AND col2 = 4)
 FROM t
 WHERE ((col + 1) = 3 AND col2 = 4)
-    """
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_distinct_on_one_field():
+    sql = "SELECT DISTINCT ON (location) location, time, report FROM weather_reports;"
+    expected = """
+SELECT DISTINCT ON (location)
+ location,
+ time,
+ report
+FROM weather_reports;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_distinct_on_multiple_fields():
+    sql = "SELECT DISTINCT ON (location, time) location, time, report FROM weather_reports;"
+    expected = """
+SELECT DISTINCT ON (location, time)
+ location,
+ time,
+ report
+FROM weather_reports;
+"""
     assert format_sql(sql) == expected.strip()

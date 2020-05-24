@@ -2,6 +2,7 @@ from sqlvalidator.grammar.lexer import (
     ExpressionParser,
     FromStatementParser,
     WhereClauseParser,
+    SQLStatementParser,
 )
 from sqlvalidator.grammar.sql import (
     FunctionCall,
@@ -236,5 +237,27 @@ def test_consecutive_parenthesis():
             ),
             Condition(Column("col2"), "=", Integer(4),),
         )
+    )
+    assert actual == expected
+
+
+def test_select_all():
+    actual = SQLStatementParser.parse(to_tokens("SELECT ALL 1"))
+    expected = SelectStatement(select_all=True, expressions=[Integer(1)])
+    assert actual == expected
+
+
+def test_select_distinct():
+    actual = SQLStatementParser.parse(to_tokens("SELECT DISTINCT 1"))
+    expected = SelectStatement(select_distinct=True, expressions=[Integer(1)])
+    assert actual == expected
+
+
+def test_select_distinct():
+    actual = SQLStatementParser.parse(to_tokens("SELECT DISTINCT ON (col) col"))
+    expected = SelectStatement(
+        select_distinct=True,
+        select_distinct_on=[Column("col")],
+        expressions=[Column("col")],
     )
     assert actual == expected

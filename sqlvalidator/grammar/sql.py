@@ -9,20 +9,38 @@ def transform(obj: Any) -> str:
 
 class SelectStatement:
     def __init__(
-        self, expressions, from_statement=None, where_clause=None, semi_colon=True
+        self,
+        expressions,
+        select_all=False,
+        select_distinct=False,
+        select_distinct_on=None,
+        from_statement=None,
+        where_clause=None,
+        semi_colon=True,
     ):
         self.expressions = expressions
+        self.select_all = select_all
+        self.select_distinct = select_distinct
+        self.select_distinct_on = select_distinct_on
         self.from_statement = from_statement
         self.where_clause = where_clause
         self.semi_colon = semi_colon
 
     def transform(self, is_subquery=False):
+        statement_str = "SELECT"
+        if self.select_all:
+            statement_str += " ALL"
+        elif self.select_distinct:
+            statement_str += " DISTINCT"
+            if self.select_distinct_on:
+                statement_str += " ON ({})".format(
+                    ", ".join(map(str, self.select_distinct_on))
+                )
+
         if len(self.expressions) == 1:
-            statement_str = "SELECT {}".format(self.expressions[0])
+            statement_str += " {}".format(self.expressions[0])
         else:
-            statement_str = "SELECT\n {}".format(
-                ",\n ".join(map(str, self.expressions))
-            )
+            statement_str += "\n {}".format(",\n ".join(map(str, self.expressions)))
 
         if self.from_statement:
             if isinstance(self.from_statement, Parenthesis):
@@ -75,6 +93,20 @@ class SelectStatement:
     def __eq__(self, other):
         return (
             type(self) == type(other)
+            and self.select_all == other.select_all
+            and self.select_distinct == other.select_distinct
+            and (
+                (self.select_distinct_on is None and other.select_distinct_on is None)
+                or (
+                    len(self.select_distinct_on) == len(other.select_distinct_on)
+                    and all(
+                        a == o
+                        for a, o in zip(
+                            self.select_distinct_on, other.select_distinct_on
+                        )
+                    )
+                )
+            )
             and self.from_statement == other.from_statement
             and len(self.expressions) == len(other.expressions)
             and all(a == o for a, o in zip(self.expressions, other.expressions))
