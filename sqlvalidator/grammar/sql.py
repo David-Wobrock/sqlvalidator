@@ -57,14 +57,9 @@ class SelectStatement:
             return []
 
         for e in self.expressions:
-            if isinstance(e, Column):
-                if e.value not in known_fields:
-                    errors.append("The column {} was not found".format(e.value))
-            elif isinstance(e, Alias) and isinstance(e.expression, Column):
-                if e.expression.value not in known_fields:
-                    errors.append(
-                        "The column {} was not found".format(e.expression.value)
-                    )
+            errors += e.validate(known_fields)
+        if self.where_clause:
+            errors += self.where_clause.validate(known_fields)
         return errors
 
     @property
@@ -99,6 +94,9 @@ class Expression:
     def __eq__(self, other):
         return type(self) == type(other) and self.value == other.value
 
+    def validate(self, known_fields):
+        return []
+
 
 class WhereClause(Expression):
     def transform(self):
@@ -124,6 +122,11 @@ class WhereClause(Expression):
         return where_str
         """
         return str(self.value)
+
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        errors += self.value.validate(known_fields)
+        return errors
 
 
 class FunctionCall(Expression):
@@ -151,7 +154,11 @@ class FunctionCall(Expression):
 
 
 class Column(Expression):
-    pass
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        if self.value not in known_fields:
+            errors.append("The column {} was not found".format(self.value))
+        return errors
 
 
 class String(Expression):
@@ -214,6 +221,11 @@ class Parenthesis(Expression):
             and len(self.args) == len(other.args)
             and all(a == o for a, o in zip(self.args, other.args))
         )
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        for a in self.args:
+            errors += a.validate(known_fields)
+        return errors
 
 
 class Alias(Expression):
@@ -238,6 +250,12 @@ class Alias(Expression):
             and self.expression == other.expression
             and self.alias == other.alias
         )
+
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        if isinstance(self.expression, Column):
+            errors += self.expression.validate(known_fields)
+        return errors
 
 
 class ArithmaticOperator(Expression):
@@ -287,6 +305,13 @@ class Condition(Expression):
         return "<Condition: {!r} {} {!r}>".format(
             self.value, self.predicate, self.right_hand
         )
+
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        errors += self.value.validate(known_fields)
+        errors += self.right_hand.validate(known_fields)
+        return errors
+
 
 
 class BooleanCondition(Expression):
