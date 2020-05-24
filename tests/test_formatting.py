@@ -7,7 +7,7 @@ def test_format_select_star():
 SELECT *
 FROM table;
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_upper_function_name():
@@ -16,7 +16,7 @@ def test_upper_function_name():
 SELECT SUM(column)
 FROM table;
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_nested_function_name():
@@ -25,13 +25,13 @@ def test_nested_function_name():
 SELECT IFNULL(SUM(col), 'NOTHING')
 FROM table_stmt;
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_no_from_statement():
     sql = "select 1;"
     expected = "SELECT 1;"
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_simple_column():
@@ -40,7 +40,25 @@ def test_simple_column():
 SELECT col
 FROM table_stmt;
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
+
+
+def test_conditional_column():
+    sql = "select col = 1 from table_stmt;"
+    expected = """
+SELECT col = 1
+FROM table_stmt;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_conditional_parenthesis_columns():
+    sql = "select (col + 1) = 4 as out from table_stmt;"
+    expected = """
+SELECT (col + 1) = 4 AS out
+FROM table_stmt;
+"""
+    assert format_sql(sql) == expected.strip()
 
 
 def test_simple_aliased_column():
@@ -49,7 +67,7 @@ def test_simple_aliased_column():
 SELECT col alias
 FROM table_stmt;
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_simple_aliased_as_column():
@@ -58,7 +76,7 @@ def test_simple_aliased_as_column():
 SELECT col AS alias
 FROM table_stmt;
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_multiple_columns():
@@ -69,7 +87,7 @@ SELECT
  col2
 FROM table_stmt;
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_parenthesis():
@@ -80,7 +98,7 @@ SELECT
  id
 FROM auth_user;
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_basic_arithmetic():
@@ -91,7 +109,7 @@ SELECT
  2 * 3,
  9 / 3;
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_chained_arithmetic():
@@ -101,7 +119,7 @@ SELECT
  1 + 1 + 1,
  2 * 3 - 5
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_nested_queries():
@@ -113,7 +131,7 @@ FROM (
  FROM table_stmt
 );
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_nested_queries_multiple_columns():
@@ -129,7 +147,7 @@ FROM (
  FROM table_stmt
 );
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_two_nested_queries():
@@ -146,7 +164,7 @@ FROM (
  )
 );
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
 
 
 def test_assert_no_semi_colon():
@@ -155,4 +173,126 @@ def test_assert_no_semi_colon():
 SELECT *
 FROM t
 """
-    assert expected.strip() == format_sql(sql)
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_boolean_column():
+    sql = "select * from t where col"
+    expected = """
+SELECT *
+FROM t
+WHERE col
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_boolean_equal():
+    sql = "select * from t where col = true"
+    expected = """
+SELECT *
+FROM t
+WHERE col = TRUE
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_boolean_is():
+    sql = "select * from t where col is true"
+    expected = """
+SELECT *
+FROM t
+WHERE col IS TRUE
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_str():
+    sql = "select * from t where col = 'test'"
+    expected = """
+SELECT *
+FROM t
+WHERE col = 'test'
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_columns():
+    sql = "select * from t where col = col2"
+    expected = """
+SELECT *
+FROM t
+WHERE col = col2
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_parenthesis_expression():
+    sql = "select * from t where (col + 1) = col2"
+    expected = """
+SELECT *
+FROM t
+WHERE (col + 1) = col2
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_boolean():
+    sql = "select * from t where col = 1 and col2=4"
+    expected = """
+SELECT *
+FROM t
+WHERE col = 1 AND col2 = 4
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_parenthesis_boolean():
+    sql = "select * from t where (col = 1 and (col2=4))"
+    expected = """
+SELECT *
+FROM t
+WHERE (col = 1 AND (col2 = 4))
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_multiple_parenthesis_booleans():
+    sql = (
+        "select * from t where (col = 1 and col2=4) or (col = 2 and (col =6 or col=9))"
+    )
+    expected = """
+SELECT *
+FROM t
+WHERE (col = 1 AND col2 = 4) OR (col = 2 AND (col = 6 OR col = 9))
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_where_clause_multiple_booleans():
+    sql = "select * from t where col = 1 and col2=4 And col = 2 and col =6 or (col=9)"
+    expected = """
+SELECT *
+FROM t
+WHERE col = 1 AND col2 = 4 AND col = 2 AND col = 6 OR (col = 9)
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_boolean_conditions_select_where():
+    sql = "select (col+1) = 3 AND col2=4 from t where (col+1) = 3 AND col2=4"
+    expected = """
+SELECT (col + 1) = 3 AND col2 = 4
+FROM t
+WHERE (col + 1) = 3 AND col2 = 4
+    """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_parenthesis_boolean_conditions_select_where():
+    sql = "select ((col+1) = 3 AND col2=4) from t where ((col+1) = 3 AND col2=4)"
+    expected = """
+SELECT ((col + 1) = 3 AND col2 = 4)
+FROM t
+WHERE ((col + 1) = 3 AND col2 = 4)
+    """
+    assert format_sql(sql) == expected.strip()

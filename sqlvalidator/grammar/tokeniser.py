@@ -74,4 +74,9 @@ def to_tokens(value: str):
                                                             for w9 in split_with_sep(
                                                                 w8, "/"
                                                             ):
-                                                                yield w9.lower()
+                                                                for (
+                                                                    w10
+                                                                ) in split_with_sep(
+                                                                    w9, "="
+                                                                ):
+                                                                    yield w10.lower()

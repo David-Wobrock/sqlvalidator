@@ -1,6 +1,7 @@
 from sqlvalidator.grammar.lexer import (
     ExpressionParser,
     FromStatementParser,
+    WhereClauseParser,
 )
 from sqlvalidator.grammar.sql import (
     FunctionCall,
@@ -12,89 +13,228 @@ from sqlvalidator.grammar.sql import (
     Addition,
     SelectStatement,
     Table,
+    Condition,
+    BooleanCondition,
+    WhereClause,
 )
 from sqlvalidator.grammar.tokeniser import to_tokens
 
 
 def test_simple_function_parsing():
-    assert ExpressionParser.parse(to_tokens("test(col)")) == FunctionCall(
-        "test", Column("col")
-    )
+    actual = ExpressionParser.parse(to_tokens("test(col)"))
+    expected = FunctionCall("test", Column("col"))
+    assert actual == expected
 
 
 def test_simple_function_parsing_no_args():
-    assert ExpressionParser.parse(to_tokens("test()")) == FunctionCall("test")
+    actual = ExpressionParser.parse(to_tokens("test()"))
+    expected = FunctionCall("test")
+    assert actual == expected
 
 
 def test_simple_function_multiple_params():
-    assert ExpressionParser.parse(to_tokens("test(col, 'Test')")) == FunctionCall(
-        "test", Column("col"), String("Test", quotes="'")
-    )
+    actual = ExpressionParser.parse(to_tokens("test(col, 'Test')"))
+    expected = FunctionCall("test", Column("col"), String("Test", quotes="'"))
+    assert actual == expected
 
 
 def test_nested_functions():
-    assert ExpressionParser.parse(to_tokens("test(foo(col))")) == FunctionCall(
-        "test", FunctionCall("foo", Column("col"))
-    )
+    actual = ExpressionParser.parse(to_tokens("test(foo(col))"))
+    expected = FunctionCall("test", FunctionCall("foo", Column("col")))
+    assert actual == expected
 
 
 def test_string_value():
-    assert ExpressionParser.parse(to_tokens("'VAL'")) == String("VAL", quotes="'")
+    actual = ExpressionParser.parse(to_tokens("'VAL'"))
+    expected = String("VAL", quotes="'")
+    assert actual == expected
 
 
 def test_string_value_double_quotes():
-    assert ExpressionParser.parse(to_tokens('"val"')) == String("val", quotes='"')
+    actual = ExpressionParser.parse(to_tokens('"val"'))
+    expected = String("val", quotes='"')
+    assert actual == expected
 
 
 def test_string_value_back_quotes():
-    assert ExpressionParser.parse(to_tokens("`val`")) == String("val", quotes="`")
+    actual = ExpressionParser.parse(to_tokens("`val`"))
+    expected = String("val", quotes="`")
+    assert actual == expected
 
 
 def test_aliased_column():
-    assert ExpressionParser.parse(to_tokens("col AS column_name")) == Alias(
-        Column("col"), alias="column_name", with_as=True
-    )
+    actual = ExpressionParser.parse(to_tokens("col AS column_name"))
+    expected = Alias(Column("col"), alias="column_name", with_as=True)
+    assert actual == expected
 
 
 def test_aliased_string_without_as():
-    assert ExpressionParser.parse(to_tokens("'col' column_name")) == Alias(
-        String("col", quotes="'"), alias="column_name", with_as=False
-    )
+    actual = ExpressionParser.parse(to_tokens("'col' column_name"))
+    expected = Alias(String("col", quotes="'"), alias="column_name", with_as=False)
+    assert actual == expected
 
 
 def test_integer():
-    assert ExpressionParser.parse(to_tokens("2")) == Integer(2)
+    actual = ExpressionParser.parse(to_tokens("2"))
+    expected = Integer(2)
+    assert actual == expected
 
 
 def test_addition():
-    assert ExpressionParser.parse(to_tokens("2+4")) == Addition(Integer(2), Integer(4))
+    actual = ExpressionParser.parse(to_tokens("2+4"))
+    expected = Addition(Integer(2), Integer(4))
+    assert actual == expected
 
 
 def test_chained_addition():
-    assert ExpressionParser.parse(to_tokens("2+4+5")) == Addition(
-        Integer(2), Addition(Integer(4), Integer(5))
-    )
+    actual = ExpressionParser.parse(to_tokens("2+4+5"))
+    expected = Addition(Integer(2), Addition(Integer(4), Integer(5)))
+    assert actual == expected
+
+
+def test_conditional_expression():
+    actual = ExpressionParser.parse(to_tokens("field = 4"))
+    expected = Condition(Column("field"), "=", Integer(4))
+    assert actual == expected
 
 
 def test_parenthesis():
-    assert ExpressionParser.parse(to_tokens("(field)")) == Parenthesis(Column("field"))
+    actual = ExpressionParser.parse(to_tokens("(field)"))
+    expected = Parenthesis(Column("field"))
+    assert actual == expected
+
+
+def test_parenthesis_conditional():
+    actual = ExpressionParser.parse(to_tokens("(field+3) = 4"))
+    expected = Condition(
+        Parenthesis(Addition(Column("field"), Integer(3))), "=", Integer(4)
+    )
+    assert actual == expected
 
 
 def test_parenthesis_multiple_elements():
-    assert ExpressionParser.parse(
-        to_tokens("(field,other_field,3,'test')")
-    ) == Parenthesis(
+    actual = ExpressionParser.parse(to_tokens("(field,other_field,3,'test')"))
+    expected = Parenthesis(
         Column("field"), Column("other_field"), Integer(3), String("test", quotes="'")
     )
+    assert actual == expected
 
 
 def test_from_subquery():
-    assert FromStatementParser.parse(
-        to_tokens("(select field from table_stmt)")
-    ) == Parenthesis(
+    actual = FromStatementParser.parse(to_tokens("(select field from table_stmt)"))
+    expected = Parenthesis(
         SelectStatement(
             expressions=[Column("field")],
             from_statement=Table("table_stmt"),
             semi_colon=False,
         )
     )
+    assert actual == expected
+
+
+def test_where_clause():
+    actual = WhereClauseParser.parse(to_tokens("col = 3"))
+    expected = WhereClause(Condition(Column("col"), "=", Integer(3)))
+    assert actual == expected
+
+
+def test_boolean_where_clause():
+    actual = WhereClauseParser.parse(to_tokens("col = 3 and field = 5"))
+    expected = WhereClause(
+        BooleanCondition(
+            "and",
+            Condition(Column("col"), "=", Integer(3)),
+            Condition(Column("field"), "=", Integer(5)),
+        )
+    )
+    assert actual == expected
+
+
+def test_parenthesis_boolean_where_clause():
+    actual = WhereClauseParser.parse(to_tokens("(col = 3 and field = 5) or (f2 or f3)"))
+    expected = WhereClause(
+        BooleanCondition(
+            "or",
+            Parenthesis(
+                BooleanCondition(
+                    "and",
+                    Condition(Column("col"), "=", Integer(3)),
+                    Condition(Column("field"), "=", Integer(5)),
+                )
+            ),
+            Parenthesis(BooleanCondition("or", Column("f2"), Column("f3"))),
+        )
+    )
+    assert actual == expected
+
+
+def test_parenthesis_expression_where_clause():
+    actual = WhereClauseParser.parse(to_tokens("(col + 1) = col2"))
+    expected = WhereClause(
+        Condition(Parenthesis(Addition(Column("col"), Integer(1))), "=", Column("col2"))
+    )
+    assert actual == expected
+
+
+def test_multiple_args_boolean_condition():
+    actual = WhereClauseParser.parse(to_tokens("(col = 1 and col2=4 and col3=4)"))
+    expected = WhereClause(
+        Parenthesis(
+            BooleanCondition(
+                "and",
+                Condition(Column("col"), "=", Integer(1)),
+                BooleanCondition(
+                    "and",
+                    Condition(Column("col2"), "=", Integer(4)),
+                    Condition(Column("col3"), "=", Integer(4)),
+                ),
+            ),
+        )
+    )
+    assert actual == expected
+
+
+def test_nested_parenthesis_boolean():
+    actual = WhereClauseParser.parse(
+        to_tokens("(col = 1 and col2=4) or (col = 2 and (col =6 or col=9))")
+    )
+    expected = WhereClause(
+        BooleanCondition(
+            "or",
+            Parenthesis(
+                BooleanCondition(
+                    "and",
+                    Condition(Column("col"), "=", Integer(1)),
+                    Condition(Column("col2"), "=", Integer(4)),
+                )
+            ),
+            Parenthesis(
+                BooleanCondition(
+                    "and",
+                    Condition(Column("col"), "=", Integer(2)),
+                    Parenthesis(
+                        BooleanCondition(
+                            "or",
+                            Condition(Column("col"), "=", Integer(6)),
+                            Condition(Column("col"), "=", Integer(9)),
+                        )
+                    ),
+                )
+            ),
+        )
+    )
+    assert actual == expected
+
+
+def test_consecutive_parenthesis():
+    actual = ExpressionParser.parse(to_tokens("((col+1) = 3 AND col2=4)"))
+    expected = Parenthesis(
+        BooleanCondition(
+            "and",
+            Condition(
+                Parenthesis(Addition(Column("col"), Integer(1))), "=", Integer(3)
+            ),
+            Condition(Column("col2"), "=", Integer(4),),
+        )
+    )
+    assert actual == expected

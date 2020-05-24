@@ -8,6 +8,10 @@ from sqlvalidator.grammar.sql import (
     Parenthesis,
     Table,
     ArithmaticOperator,
+    Condition,
+    BooleanCondition,
+    Boolean,
+    WhereClause,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -29,7 +33,7 @@ class SQLStatementParser:
 
 
 class SelectStatementParser:
-    keywords = ("from", ";")
+    keywords = (";", "from", "where")
 
     @classmethod
     def parse(cls, tokens):
@@ -42,10 +46,17 @@ class SelectStatementParser:
         else:
             from_statement = None
 
+        if next_token == "where":
+            where_clause = WhereClauseParser.parse(tokens)
+            next_token = next(tokens, None)
+        else:
+            where_clause = None
+
         semi_colon = bool(next_token and next_token == ";")
         return SelectStatement(
             expressions=expressions,
             from_statement=from_statement,
+            where_clause=where_clause,
             semi_colon=semi_colon,
         )
 
@@ -61,6 +72,16 @@ class FromStatementParser:
         else:
             expression = Table(next_token)
         return expression
+
+
+class WhereClauseParser:
+    @staticmethod
+    def parse(tokens):
+        expression_tokens, next_token = get_tokens_until_one_of(
+            tokens, ["group", "having"]
+        )
+        expression = ExpressionParser.parse(iter(expression_tokens))
+        return WhereClause(expression)
 
 
 class ExpressionListParser:
@@ -87,38 +108,58 @@ class ExpressionListParser:
 
 class ExpressionParser:
     @staticmethod
-    def parse(tokens):
+    def parse(tokens, is_right_hand=False):
         main_token = next(tokens)
-        next_token = next(tokens, None)
+
         if main_token == "'" or main_token == '"' or main_token == "`":
+            next_token = next(tokens, None)
             expression = String(next_token, quotes=main_token)
             next_token = next(tokens)  # final quote
             if main_token != next_token:
                 raise ParsingError("Did not find ending quote")
-            next_token = next(tokens, None)
         elif main_token.isdigit():
             expression = Integer(main_token)
-            if next_token and next_token in ("+", "-", "*", "/"):
-                left_hand = expression
-                symbol = next_token
-                right_hand = ExpressionParser.parse(tokens)
-                expression = ArithmaticOperator(symbol, left_hand, right_hand)
-                next_token = next(tokens, None)
-
+        elif main_token in Boolean.BOOLEAN_VALUES:
+            expression = Boolean(main_token)
         elif main_token == "(":
-            argument_tokens = [next_token] + get_tokens_until_closing_parenthesis(
-                tokens
-            )
-            arguments = ExpressionListParser.parse(iter(argument_tokens))
-            expression = Parenthesis(*arguments)
-            next_token = next(tokens, None)
-        elif next_token is not None and next_token == "(":
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             arguments = ExpressionListParser.parse(iter(argument_tokens))
-            expression = FunctionCall(main_token, *arguments)
-            next_token = next(tokens, None)
+            expression = Parenthesis(*arguments)
         else:
-            expression = Column(main_token)
+            expression = None
+
+        next_token = next(tokens, None)
+
+        # Expressions that need the next_token to be read
+        if expression is None:
+            if next_token is not None and next_token == "(":
+                argument_tokens = get_tokens_until_closing_parenthesis(tokens)
+                arguments = ExpressionListParser.parse(iter(argument_tokens))
+                expression = FunctionCall(main_token, *arguments)
+                next_token = next(tokens, None)
+            else:
+                expression = Column(main_token)
+
+        if next_token and next_token in ("+", "-", "*", "/"):
+            left_hand = expression
+            symbol = next_token
+            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            expression = ArithmaticOperator(symbol, left_hand, right_hand)
+
+        if is_right_hand:
+            return expression, next_token
+
+        if next_token in Condition.PREDICATES:
+            symbol = next_token
+            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            expression = Condition(expression, symbol, right_hand)
+
+        if next_token in BooleanCondition.PREDICATES:
+            left_hand = expression
+            symbol = next_token
+            right_hand = ExpressionParser.parse(tokens)
+            expression = BooleanCondition(symbol, left_hand, right_hand)
+            next_token = next(tokens, None)
 
         if (
             next_token is not None

@@ -1,38 +1,26 @@
 language: python
-os:
-  - linux
-  - windows
+# support windows at some point
 
 install:
-- pip install pytest==5.4.2 black==19.10b0 mypy==0.770 flake8==3.8.1
+  - pip install pytest==5.4.2 black==19.10b0 mypy==0.770 flake8==3.8.1
 
 script:
-- $TEST_CMD
+  - pytest
 
 matrix:
   include:
-    - name: "black"
+    - name: "Linting and formatting"
       python: 3.6
-      env:
-        - TEST_CMD="black --check ."
-    - name: "mypy"
-      python: 3.6
-      env:
-        - TEST_CMD="mypy --ignore-missing-imports ."
-    - name: "flake8"
-      python: 3.6
-      env:
-        - TEST_CMD="flake8 --max-line-length=88 --ignore=E203 ."
+
+      script:
+      - |
+        black --check .
+        mypy --ignore-missing-imports .
+        flake8 --max-line-length=88 --ignore=E203,W503 .
 
     - name: "Run tests with Python 3.6"
       python: 3.6
-      env:
-        - TEST_CMD="pytest"
     - name: "Run tests with Python 3.7"
       python: 3.7
-      env:
-        - TEST_CMD="pytest"
     - name: "Run tests with Python 3.8"
       python: 3.8
-      env:
-        - TEST_CMD="pytest"

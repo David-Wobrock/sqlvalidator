@@ -26,3 +26,8 @@ def test_semi_colon():
 def test_arithmetic():
     value = "2+3*5/7-5"
     assert list(to_tokens(value)) == ["2", "+", "3", "*", "5", "/", "7", "-", "5"]
+
+
+def test_parenthesis_arithmetic():
+    value = "(2+3)"
+    assert list(to_tokens(value)) == ["(", "2", "+", "3", ")"]

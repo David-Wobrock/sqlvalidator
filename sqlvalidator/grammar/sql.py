@@ -8,9 +8,12 @@ def transform(obj: Any) -> str:
 
 
 class SelectStatement:
-    def __init__(self, expressions, from_statement, semi_colon: bool):
+    def __init__(
+        self, expressions, from_statement=None, where_clause=None, semi_colon=True
+    ):
         self.expressions = expressions
         self.from_statement = from_statement
+        self.where_clause = where_clause
         self.semi_colon = semi_colon
 
     def transform(self, is_subquery=False):
@@ -29,6 +32,10 @@ class SelectStatement:
             else:
                 from_str = str(self.from_statement)
             statement_str += "\nFROM {}".format(from_str)
+
+        if self.where_clause:
+            statement_str += "\nWHERE {}".format(transform(self.where_clause))
+
         if is_subquery:
             statement_str = " " + statement_str.replace("\n", "\n ")
         elif self.semi_colon:
@@ -86,8 +93,37 @@ class Expression:
     def __str__(self):
         return str(self.value)
 
+    def __repr__(self):
+        return "<{}: {!r}>".format(self.__class__.__name__, self.value)
+
     def __eq__(self, other):
         return type(self) == type(other) and self.value == other.value
+
+
+class WhereClause(Expression):
+    def transform(self):
+        """
+        overriden_value = bool(value)
+        value = value or self.value
+
+        is_parenthesis = isinstance(value, Parenthesis)
+        if is_parenthesis:
+            value = value.args[0]
+
+        if isinstance(value, BooleanCondition):
+            join_str = "\n{} ".format(value.type.upper())
+            where_str = "\n" + join_str.join(self.transform(a) for a in value.args)
+            where_str = where_str.replace("\n", "\n ")
+        elif overriden_value:
+            where_str = str(value)
+        else:
+            where_str = " {}".format(value)
+
+        if is_parenthesis:
+            where_str = " ({}\n)".format(where_str)
+        return where_str
+        """
+        return str(self.value)
 
 
 class FunctionCall(Expression):
@@ -135,12 +171,42 @@ class Integer(Expression):
         return str(self.value)
 
 
+class Boolean(Expression):
+    TRUE_VALUES = (
+        "true",
+        "t",
+        "y",
+        "yes",
+    )
+    FALSE_VALUES = (
+        "false",
+        "f",
+        "n",
+        "no",
+    )
+    BOOLEAN_VALUES = TRUE_VALUES + FALSE_VALUES
+
+    def __init__(self, value):
+        assert value in self.BOOLEAN_VALUES
+        if value in self.TRUE_VALUES:
+            value = True
+        else:
+            value = False
+        super().__init__(value)
+
+    def __str__(self):
+        return str(self.value).upper()
+
+
 class Parenthesis(Expression):
     def __init__(self, *args):
         self.args = args
 
     def __str__(self):
         return "({})".format(", ".join(map(str, self.args)))
+
+    def __repr__(self):
+        return "<Parenthesis: {}>".format(", ".join(map(repr, self.args)))
 
     def __eq__(self, other):
         return (
@@ -161,6 +227,11 @@ class Alias(Expression):
             self.expression, " AS " if self.with_as else " ", self.alias,
         )
 
+    def __repr__(self):
+        return "<Alias: {!r} as={} {}>".format(
+            self.expression, self.with_as, self.alias
+        )
+
     def __eq__(self, other):
         return (
             type(self) == type(other)
@@ -178,6 +249,11 @@ class ArithmaticOperator(Expression):
         join_str = " {} ".format(self.operator)
         return join_str.join(map(str, self.args))
 
+    def __repr__(self):
+        return "<{} {}: {}>".format(
+            self.__class__.__name__, self.operator, ", ".join(map(repr, self.args))
+        )
+
     def __eq__(self, other):
         return (
             (isinstance(other, type(self)) or isinstance(self, type(other)))
@@ -194,3 +270,46 @@ class Addition(ArithmaticOperator):
 
 class Table(Expression):
     pass
+
+
+class Condition(Expression):
+    PREDICATES = ("=", ">", "<", "<=", ">=", "is")
+
+    def __init__(self, expression, predicate, right_hand):
+        super().__init__(expression)
+        self.predicate = predicate
+        self.right_hand = right_hand
+
+    def __str__(self):
+        return "{} {} {}".format(self.value, self.predicate.upper(), self.right_hand)
+
+    def __repr__(self):
+        return "<Condition: {!r} {} {!r}>".format(
+            self.value, self.predicate, self.right_hand
+        )
+
+
+class BooleanCondition(Expression):
+    PREDICATES = ("and", "or")
+
+    def __init__(self, type, *args):
+        assert type in ("and", "or")
+        self.type = type
+        self.args = args
+
+    def __str__(self):
+        join_str = " {} ".format(self.type.upper())
+        return join_str.join(map(str, self.args))
+
+    def __repr__(self):
+        return "<BooleanCondition {}: {}>".format(
+            self.type, ", ".join(map(repr, self.args))
+        )
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.type == other.type
+            and len(self.args) == len(other.args)
+            and all(a == o for a, o in zip(self.args, other.args))
+        )
