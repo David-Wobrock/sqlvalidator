@@ -15,7 +15,7 @@ matrix:
         - pip install pytest==5.4.2 black==19.10b0 mypy==0.770 flake8==3.8.1
       script:
       - |
-        set -euo pipefail
+        set -eo pipefail
         black --check .
         mypy --ignore-missing-imports .
         flake8 --max-line-length=88 --ignore=E203,W503,E231 .
