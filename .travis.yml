@@ -2,7 +2,7 @@ language: python
 # support windows at some point
 
 install:
-  - pip install pytest==5.4.2 black==19.10b0 mypy==0.770 flake8==3.8.1
+  - pip install -e .[test]
 
 script:
   - pytest
@@ -11,7 +11,8 @@ matrix:
   include:
     - name: "Linting and formatting"
       python: 3.6
-
+      install:
+        - pip install pytest==5.4.2 black==19.10b0 mypy==0.770 flake8==3.8.1
       script:
       - |
         black --check . &&
