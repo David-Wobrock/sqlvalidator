@@ -221,6 +221,7 @@ class Parenthesis(Expression):
             and len(self.args) == len(other.args)
             and all(a == o for a, o in zip(self.args, other.args))
         )
+
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         for a in self.args:
@@ -311,7 +312,6 @@ class Condition(Expression):
         errors += self.value.validate(known_fields)
         errors += self.right_hand.validate(known_fields)
         return errors
-
 
 
 class BooleanCondition(Expression):

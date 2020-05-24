@@ -50,6 +50,7 @@ def test_where_without_from():
     sql = "SELECT 1 WHERE col = 3"
     assert_invalid_sql(sql)
 
+
 def test_where_parenthesis_without_from():
     sql = "SELECT 1 WHERE (col = 3)"
     assert_invalid_sql(sql)
