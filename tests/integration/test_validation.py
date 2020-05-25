@@ -56,11 +56,33 @@ def test_where_parenthesis_without_from():
     assert_invalid_sql(sql)
 
 
+def test_where_boolean_condition():
+    sql = (
+        "SELECT field1 FROM (SELECT field1 FROM table) WHERE field1 = 3 and field2 = 4"
+    )
+    assert_invalid_sql(sql)
+
+
 def test_where_constant_columns():
-    sql = "SELECT 1 WHERE 'test' and 4"
+    sql = "SELECT 1 WHERE 'test' = 't' and 4 > 5"
     assert_valid_sql(sql)
 
 
 def test_nested_select_without_where_field():
     sql = "SELECT field1 FROM (SELECT field1 FROM table) WHERE field2 = 3"
+    assert_invalid_sql(sql)
+
+
+def test_where_clause_returns_boolean():
+    sql = "SELECT 1 WHERE 'test' LIKE '%t%'"
+    assert_valid_sql(sql)
+
+
+def test_where_clause_not_boolean_but_string():
+    sql = "SELECT 1 WHERE 'test'"
+    assert_invalid_sql(sql)
+
+
+def test_where_clause_not_boolean_but_integer():
+    sql = "SELECT 1 WHERE 5"
     assert_invalid_sql(sql)

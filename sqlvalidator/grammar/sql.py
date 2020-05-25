@@ -129,6 +129,10 @@ class Expression:
     def validate(self, known_fields):
         return []
 
+    @property
+    def return_type(self):
+        return Any
+
 
 class WhereClause(Expression):
     def transform(self):
@@ -158,6 +162,12 @@ class WhereClause(Expression):
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
+        if self.value.return_type != bool:
+            errors.append(
+                "The argument of WHERE must be type boolean, not type {}".format(
+                    self.value.return_type
+                )
+            )
         return errors
 
 
@@ -201,6 +211,10 @@ class String(Expression):
     def __str__(self):
         return "{quotes}{value}{quotes}".format(quotes=self.quotes, value=self.value)
 
+    @property
+    def return_type(self):
+        return str
+
 
 class Integer(Expression):
     def __init__(self, value):
@@ -208,6 +222,10 @@ class Integer(Expression):
 
     def __str__(self):
         return str(self.value)
+
+    @property
+    def return_type(self):
+        return int
 
 
 class Boolean(Expression):
@@ -236,6 +254,10 @@ class Boolean(Expression):
     def __str__(self):
         return str(self.value).upper()
 
+    @property
+    def return_type(self):
+        return bool
+
 
 class Parenthesis(Expression):
     def __init__(self, *args):
@@ -259,6 +281,11 @@ class Parenthesis(Expression):
         for a in self.args:
             errors += a.validate(known_fields)
         return errors
+
+    @property
+    def return_type(self):
+        for a in self.args:
+            return a.return_type
 
 
 class Alias(Expression):
@@ -313,6 +340,10 @@ class ArithmaticOperator(Expression):
             and all(a == o for a, o in zip(self.args, other.args))
         )
 
+    @property
+    def return_type(self):
+        return int
+
 
 class Addition(ArithmaticOperator):
     def __init__(self, *args):
@@ -324,7 +355,7 @@ class Table(Expression):
 
 
 class Condition(Expression):
-    PREDICATES = ("=", ">", "<", "<=", ">=", "is")
+    PREDICATES = ("=", ">", "<", "<=", ">=", "is", "like")
 
     def __init__(self, expression, predicate, right_hand):
         super().__init__(expression)
@@ -344,6 +375,10 @@ class Condition(Expression):
         errors += self.value.validate(known_fields)
         errors += self.right_hand.validate(known_fields)
         return errors
+
+    @property
+    def return_type(self):
+        return bool
 
 
 class BooleanCondition(Expression):
@@ -370,3 +405,20 @@ class BooleanCondition(Expression):
             and len(self.args) == len(other.args)
             and all(a == o for a, o in zip(self.args, other.args))
         )
+
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        for a in self.args:
+            errors += a.validate(known_fields)
+            if a.return_type != bool:
+                errors.append(
+                    "The argument of {} must be type boolean, not type {}".format(
+                        self.type.upper(), a.return_type
+                    )
+                )
+
+        return errors
+
+    @property
+    def return_type(self):
+        return bool
