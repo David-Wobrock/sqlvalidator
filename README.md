@@ -5,6 +5,8 @@
 
 SQL queries formatting, syntactic and semantic validation
 
+Work In Progress!
+
 ## Command line usage
 
 For formatting SQL:
