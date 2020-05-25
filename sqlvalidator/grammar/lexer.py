@@ -12,6 +12,7 @@ from sqlvalidator.grammar.sql import (
     BooleanCondition,
     Boolean,
     WhereClause,
+    GroupByClause,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -75,6 +76,14 @@ class SelectStatementParser:
         else:
             where_clause = None
 
+        if next_token == "group":
+            next_token = next(tokens, None)
+            if not next_token == "by":
+                raise ParsingError("Missing BY after GROUP")
+            group_by_clause = GroupByParser.parse(tokens)
+        else:
+            group_by_clause = None
+
         semi_colon = bool(next_token and next_token == ";")
         return SelectStatement(
             select_all=select_all,
@@ -83,6 +92,7 @@ class SelectStatementParser:
             expressions=expressions,
             from_statement=from_statement,
             where_clause=where_clause,
+            group_by_clause=group_by_clause,
             semi_colon=semi_colon,
         )
 
@@ -108,6 +118,14 @@ class WhereClauseParser:
         )
         expression = ExpressionParser.parse(iter(expression_tokens))
         return WhereClause(expression)
+
+
+class GroupByParser:
+    @staticmethod
+    def parse(tokens):
+        expression_tokens, next_token = get_tokens_until_one_of(tokens, ["having"])
+        expressions = ExpressionListParser.parse(iter(expression_tokens))
+        return GroupByClause(*expressions)
 
 
 class ExpressionListParser:

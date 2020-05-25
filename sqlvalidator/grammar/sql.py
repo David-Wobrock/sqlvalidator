@@ -16,6 +16,7 @@ class SelectStatement:
         select_distinct_on=None,
         from_statement=None,
         where_clause=None,
+        group_by_clause=None,
         semi_colon=True,
     ):
         self.expressions = expressions
@@ -24,6 +25,7 @@ class SelectStatement:
         self.select_distinct_on = select_distinct_on
         self.from_statement = from_statement
         self.where_clause = where_clause
+        self.group_by_clause = group_by_clause
         self.semi_colon = semi_colon
 
     def transform(self, is_subquery=False):
@@ -53,6 +55,9 @@ class SelectStatement:
 
         if self.where_clause:
             statement_str += "\nWHERE {}".format(transform(self.where_clause))
+
+        if self.group_by_clause:
+            statement_str += "\nGROUP BY{}".format(transform(self.group_by_clause))
 
         if is_subquery:
             statement_str = " " + statement_str.replace("\n", "\n ")
@@ -169,6 +174,26 @@ class WhereClause(Expression):
                 )
             )
         return errors
+
+
+class GroupByClause(Expression):
+    def __init__(self, *args):
+        self.args = args
+
+    def __str__(self):
+        if len(self.args) > 1:
+            return "\n{}".format(",\n".join(map(str, self.args))).replace("\n", "\n ")
+        return " " + transform(self.args[0])
+
+    def __repr__(self):
+        return "<GroupByClause: {}>".format(", ".join(map(repr, self.args)))
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and len(self.args) == len(other.args)
+            and all(a == o for a, o in zip(self.args, other.args))
+        )
 
 
 class FunctionCall(Expression):

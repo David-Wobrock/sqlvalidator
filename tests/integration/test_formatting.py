@@ -323,3 +323,59 @@ SELECT DISTINCT ON (location, time)
 FROM weather_reports;
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_empty_group_by():
+    sql = "SELECT * from t group by ()"
+    expected = """
+SELECT *
+FROM t
+GROUP BY ()
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_group_by():
+    sql = "SELECT * from t GROUP BY col"
+    expected = """
+SELECT *
+FROM t
+GROUP BY col
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_group_by_parenthesis():
+    sql = "SELECT * from t GROUP BY (col)"
+    expected = """
+SELECT *
+FROM t
+GROUP BY (col)
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_group_by_multiple_elements():
+    sql = "SELECT * from t GROUP BY col1, col2, col3"
+    expected = """
+SELECT *
+FROM t
+GROUP BY
+ col1,
+ col2,
+ col3
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_group_by_multiple_elements_parenthesis():
+    sql = "SELECT * from t GROUP BY (col1, col2, col3)"
+    expected = """
+SELECT *
+FROM t
+GROUP BY (col1, col2, col3)
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+# TODO: group by ROLLUP, CUBE, ...
