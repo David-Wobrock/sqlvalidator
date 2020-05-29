@@ -13,6 +13,7 @@ from sqlvalidator.grammar.sql import (
     Boolean,
     WhereClause,
     GroupByClause,
+    HavingClause,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -89,6 +90,12 @@ class SelectStatementParser:
         else:
             group_by_clause = None
 
+        if next_token == "having":
+            expression_tokens, next_token = get_tokens_until_one_of(tokens, [";"])
+            having_clause = HavingClauseParser.parse(iter(expression_tokens))
+        else:
+            having_clause = None
+
         semi_colon = bool(next_token and next_token == ";")
         return SelectStatement(
             select_all=select_all,
@@ -98,6 +105,7 @@ class SelectStatementParser:
             from_statement=from_statement,
             where_clause=where_clause,
             group_by_clause=group_by_clause,
+            having_clause=having_clause,
             semi_colon=semi_colon,
         )
 
@@ -136,6 +144,13 @@ class GroupByParser:
         )
         expressions = ExpressionListParser.parse(iter(expression_tokens))
         return GroupByClause(*expressions, rollup=rollup)
+
+
+class HavingClauseParser:
+    @staticmethod
+    def parse(tokens):
+        expression = ExpressionParser.parse(tokens)
+        return HavingClause(expression)
 
 
 class ExpressionListParser:

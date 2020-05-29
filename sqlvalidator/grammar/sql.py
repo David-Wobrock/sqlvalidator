@@ -17,6 +17,7 @@ class SelectStatement:
         from_statement=None,
         where_clause=None,
         group_by_clause=None,
+        having_clause=None,
         semi_colon=True,
     ):
         self.expressions = expressions
@@ -26,6 +27,7 @@ class SelectStatement:
         self.from_statement = from_statement
         self.where_clause = where_clause
         self.group_by_clause = group_by_clause
+        self.having_clause = having_clause
         self.semi_colon = semi_colon
 
     def transform(self, is_subquery=False):
@@ -58,6 +60,9 @@ class SelectStatement:
 
         if self.group_by_clause:
             statement_str += "\nGROUP BY{}".format(transform(self.group_by_clause))
+
+        if self.having_clause:
+            statement_str += "\nHAVING {}".format(transform(self.having_clause))
 
         if is_subquery:
             statement_str = " " + statement_str.replace("\n", "\n ")
@@ -204,6 +209,10 @@ class GroupByClause(Expression):
             and all(a == o for a, o in zip(self.args, other.args))
             and self.rollup == other.rollup
         )
+
+
+class HavingClause(Expression):
+    pass
 
 
 class FunctionCall(Expression):

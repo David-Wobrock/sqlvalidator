@@ -407,3 +407,14 @@ FROM t
 GROUP BY ROLLUP (col1, col2, col3);
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_where_and_having():
+    sql = "SELECT count(*) from t where x =3 having (sum(x) > 50);"
+    expected = """
+SELECT COUNT(*)
+FROM t
+WHERE x = 3
+HAVING (SUM(x) > 50);
+"""
+    assert format_sql(sql) == expected.strip()
