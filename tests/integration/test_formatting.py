@@ -176,6 +176,15 @@ FROM t
     assert format_sql(sql) == expected.strip()
 
 
+def test_quoted_from():
+    sql = "select * from `table`;"
+    expected = """
+SELECT *
+FROM `table`;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_where_clause_boolean_column():
     sql = "select * from t where col"
     expected = """

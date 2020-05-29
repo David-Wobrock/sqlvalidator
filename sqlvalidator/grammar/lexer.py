@@ -152,6 +152,8 @@ class FromStatementParser:
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             argument = SQLStatementParser.parse(iter(argument_tokens))
             expression = Parenthesis(argument)
+        elif next_token == "'" or next_token == '"' or next_token == "`":
+            expression = Table(StringParser.parse(tokens, next_token))
         else:
             expression = Table(next_token)
         return expression
@@ -269,11 +271,7 @@ class ExpressionParser:
         main_token = next(tokens)
 
         if main_token == "'" or main_token == '"' or main_token == "`":
-            next_token = next(tokens, None)
-            expression = String(next_token, quotes=main_token)
-            next_token = next(tokens)  # final quote
-            if main_token != next_token:
-                raise ParsingError("Did not find ending quote")
+            expression = StringParser.parse(tokens, main_token)
         elif main_token.isdigit():
             expression = Integer(main_token)
         elif main_token in Boolean.BOOLEAN_VALUES:
@@ -334,3 +332,14 @@ class ExpressionParser:
                 alias = next_token
             return Alias(expression, alias, with_as)
         return expression
+
+
+class StringParser:
+    @staticmethod
+    def parse(tokens, start_quote):
+        string_content = next(tokens, None)
+        string_expression = String(string_content, quotes=start_quote)
+        end_quote = next(tokens)
+        if start_quote != end_quote:
+            raise ValueError("Did not find ending quote {}".format(start_quote))
+        return string_expression

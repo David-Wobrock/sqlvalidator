@@ -80,8 +80,8 @@ def to_tokens(value: str):
                                                                     w9, "/"
                                                                 ):
                                                                     for (
-                                                                        w11
+                                                                        w
                                                                     ) in split_with_sep(
                                                                         w10, "="
                                                                     ):
-                                                                        yield w11.lower()
+                                                                        yield w.lower()
