@@ -491,3 +491,22 @@ FROM t
 OFFSET 5
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_subquery_where():
+    sql = """
+    SELECT any_value(url) f_0
+    FROM (SELECT * FROM `toto`
+    WHERE http_code <> 0 AND (STARTS_WITH(url, 'https') OR url = 'http://example.com'))
+    GROUP BY url_hash
+        """
+    expected = """
+SELECT ANY_VALUE(url) f_0
+FROM (
+ SELECT *
+ FROM `toto`
+ WHERE http_code <> 0 AND (STARTS_WITH(url, 'https') OR url = 'http://example.com')
+)
+GROUP BY url_hash
+"""
+    assert format_sql(sql) == expected.strip()

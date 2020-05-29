@@ -487,7 +487,7 @@ class Table(Expression):
 
 
 class Condition(Expression):
-    PREDICATES = ("=", ">", "<", "<=", ">=", "is", "like")
+    PREDICATES = ("=", ">", "<", "<=", ">=", "is", "like", "<>")
 
     def __init__(self, expression, predicate, right_hand):
         super().__init__(expression)

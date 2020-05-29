@@ -153,6 +153,12 @@ def test_boolean_where_clause():
     assert actual == expected
 
 
+def test_where_different_predicate():
+    actual = WhereClauseParser.parse(to_tokens("col <> 3"))
+    expected = WhereClause(Condition(Column("col"), "<>", Integer(3)),)
+    assert actual == expected
+
+
 def test_parenthesis_boolean_where_clause():
     actual = WhereClauseParser.parse(to_tokens("(col = 3 and field = 5) or (f2 or f3)"))
     expected = WhereClause(
