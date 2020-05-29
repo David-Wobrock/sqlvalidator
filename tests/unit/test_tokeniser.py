@@ -31,3 +31,8 @@ def test_arithmetic():
 def test_parenthesis_arithmetic():
     value = "(2+3)"
     assert list(to_tokens(value)) == ["(", "2", "+", "3", ")"]
+
+
+def test_newlines_and_spaces():
+    value = "  \n  (\n \n 2 \n   + \n3)   \n"
+    assert list(to_tokens(value)) == ["(", "2", "+", "3", ")"]

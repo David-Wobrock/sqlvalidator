@@ -62,21 +62,26 @@ def to_tokens(value: str):
                             yield elem3
                         else:
                             for w1 in elem3.split(" "):
-                                for w2 in split_with_sep(w1, ","):
-                                    for w3 in split_with_sep(w2, ";"):
-                                        for w4 in split_with_sep(w3, "("):
-                                            for w5 in split_with_sep(w4, ")"):
-                                                for w6 in split_with_sep(w5, "+"):
-                                                    for w7 in split_with_sep(w6, "-"):
+                                for w2 in w1.split("\n"):
+                                    for w3 in split_with_sep(w2, ","):
+                                        for w4 in split_with_sep(w3, ";"):
+                                            for w5 in split_with_sep(w4, "("):
+                                                for w6 in split_with_sep(w5, ")"):
+                                                    for w7 in split_with_sep(w6, "+"):
                                                         for w8 in split_with_sep(
-                                                            w7, "*"
+                                                            w7, "-"
                                                         ):
                                                             for w9 in split_with_sep(
-                                                                w8, "/"
+                                                                w8, "*"
                                                             ):
                                                                 for (
                                                                     w10
                                                                 ) in split_with_sep(
-                                                                    w9, "="
+                                                                    w9, "/"
                                                                 ):
-                                                                    yield w10.lower()
+                                                                    for (
+                                                                        w11
+                                                                    ) in split_with_sep(
+                                                                        w10, "="
+                                                                    ):
+                                                                        yield w11.lower()
