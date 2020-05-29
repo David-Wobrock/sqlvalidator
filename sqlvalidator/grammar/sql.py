@@ -18,6 +18,9 @@ class SelectStatement:
         where_clause=None,
         group_by_clause=None,
         having_clause=None,
+        order_by_clause=None,
+        limit_clause=None,
+        offset_clause=None,
         semi_colon=True,
     ):
         self.expressions = expressions
@@ -28,6 +31,9 @@ class SelectStatement:
         self.where_clause = where_clause
         self.group_by_clause = group_by_clause
         self.having_clause = having_clause
+        self.order_by_clause = order_by_clause
+        self.limit_clause = limit_clause
+        self.offset_clause = offset_clause
         self.semi_colon = semi_colon
 
     def transform(self, is_subquery=False):
@@ -63,6 +69,15 @@ class SelectStatement:
 
         if self.having_clause:
             statement_str += "\nHAVING {}".format(transform(self.having_clause))
+
+        if self.order_by_clause:
+            statement_str += "\nORDER BY{}".format(transform(self.order_by_clause))
+
+        if self.limit_clause:
+            statement_str += "\nLIMIT {}".format(transform(self.limit_clause))
+
+        if self.offset_clause:
+            statement_str += "\nOFFSET {}".format(transform(self.offset_clause))
 
         if is_subquery:
             statement_str = " " + statement_str.replace("\n", "\n ")
@@ -212,6 +227,79 @@ class GroupByClause(Expression):
 
 
 class HavingClause(Expression):
+    pass
+
+
+class OrderByClause(Expression):
+    def __init__(self, *args):
+        self.args = args
+
+    def __str__(self):
+        if len(self.args) > 1:
+            order_by_str = "\n" + ",\n".join(map(str, self.args))
+            order_by_str = order_by_str.replace("\n", "\n ")
+        else:
+            order_by_str = " " + transform(self.args[0])
+        return order_by_str
+
+    def __repr__(self):
+        return "<OrderByClause: {}>".format(", ".join(map(repr, self.args)),)
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and len(self.args) == len(other.args)
+            and all(a == o for a, o in zip(self.args, other.args))
+        )
+
+
+class OrderByItem(Expression):
+    def __init__(self, expression, has_asc=False, has_desc=False):
+        super().__init__(expression)
+        self.has_asc = has_asc
+        self.has_desc = has_desc
+
+    def __str__(self):
+        order_by_item_str = str(self.value)
+        if self.has_asc:
+            order_by_item_str += " ASC"
+        elif self.has_desc:
+            order_by_item_str += " DESC"
+        return order_by_item_str
+
+    def __repr__(self):
+        return "<OrderByItem: {} has_asc={} has_desc={}>".format(
+            repr(self.value), self.has_asc, self.has_desc
+        )
+
+    def __eq__(self, other):
+        return (
+            super().__eq__(other)
+            and self.has_asc == other.has_asc
+            and self.has_desc == other.has_desc
+        )
+
+
+class LimitClause(Expression):
+    def __init__(self, limit_all, expression):
+        super().__init__(expression)
+        self.limit_all = limit_all
+
+    def __str__(self):
+        if self.limit_all:
+            limit_str = "ALL"
+        else:
+            limit_str = str(self.value)
+        return limit_str
+
+    def __repr__(self):
+        return "<LimitClause: {} limit_all={}>".format(repr(self.value), self.limit_all)
+
+    def __eq__(self, other):
+        return super().__eq__(other) and self.limit_all == other.limit_all
+
+
+class OffsetClause(Expression):
     pass
 
 

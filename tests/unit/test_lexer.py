@@ -17,6 +17,8 @@ from sqlvalidator.grammar.sql import (
     Condition,
     BooleanCondition,
     WhereClause,
+    OrderByClause,
+    OrderByItem,
 )
 from sqlvalidator.grammar.tokeniser import to_tokens
 
@@ -259,5 +261,17 @@ def test_select_distinct_on():
         select_distinct=True,
         select_distinct_on=[Column("col")],
         expressions=[Column("col")],
+    )
+    assert actual == expected
+
+
+def test_order_by_clause():
+    actual = SQLStatementParser.parse(to_tokens("SELECT col FROM t ORDER BY col, 2"))
+    expected = SelectStatement(
+        expressions=[Column("col")],
+        from_statement=Table("t"),
+        order_by_clause=OrderByClause(
+            OrderByItem(Column("col")), OrderByItem(Integer(2))
+        ),
     )
     assert actual == expected

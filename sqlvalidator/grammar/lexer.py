@@ -14,6 +14,10 @@ from sqlvalidator.grammar.sql import (
     WhereClause,
     GroupByClause,
     HavingClause,
+    OrderByClause,
+    OrderByItem,
+    LimitClause,
+    OffsetClause,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -73,7 +77,7 @@ class SelectStatementParser:
 
         if next_token == "where":
             expression_tokens, next_token = get_tokens_until_one_of(
-                tokens, ["group", "having", ";"]
+                tokens, ["group", "having", "order", "limit", "offset", ";"]
             )
             where_clause = WhereClauseParser.parse(iter(expression_tokens))
         else:
@@ -84,17 +88,44 @@ class SelectStatementParser:
             if not next_token == "by":
                 raise ParsingError("Missing BY after GROUP")
             expression_tokens, next_token = get_tokens_until_one_of(
-                tokens, ["having", ";"]
+                tokens, ["having", "order", "limit", "offset", ";"]
             )
             group_by_clause = GroupByParser.parse(iter(expression_tokens))
         else:
             group_by_clause = None
 
         if next_token == "having":
-            expression_tokens, next_token = get_tokens_until_one_of(tokens, [";"])
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens, ["order", "limit", "offset", ";"]
+            )
             having_clause = HavingClauseParser.parse(iter(expression_tokens))
         else:
             having_clause = None
+
+        if next_token == "order":
+            next_token = next(tokens, None)
+            if not next_token == "by":
+                raise ParsingError("Missing BY after ORDER")
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens, ["limit", "offset", ";"]
+            )
+            order_by_clause = OrderByParser.parse(iter(expression_tokens))
+        else:
+            order_by_clause = None
+
+        if next_token == "limit":
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens, ["offset", ";"]
+            )
+            limit_clause = LimitClauseParser.parse(iter(expression_tokens))
+        else:
+            limit_clause = None
+
+        if next_token == "offset":
+            expression_tokens, next_token = get_tokens_until_one_of(tokens, [";"])
+            offset_clause = OffsetClauseParser.parse(iter(expression_tokens))
+        else:
+            offset_clause = None
 
         semi_colon = bool(next_token and next_token == ";")
         return SelectStatement(
@@ -106,6 +137,9 @@ class SelectStatementParser:
             where_clause=where_clause,
             group_by_clause=group_by_clause,
             having_clause=having_clause,
+            order_by_clause=order_by_clause,
+            limit_clause=limit_clause,
+            offset_clause=offset_clause,
             semi_colon=semi_colon,
         )
 
@@ -151,6 +185,60 @@ class HavingClauseParser:
     def parse(tokens):
         expression = ExpressionParser.parse(tokens)
         return HavingClause(expression)
+
+
+class OrderByParser:
+    @staticmethod
+    def parse(tokens):
+        expressions = []
+
+        expression_tokens, next_token = get_tokens_until_one_of(tokens, [","])
+        expression = OrderByItemParser.parse(iter(expression_tokens))
+        expressions.append(expression)
+        while next_token:
+            expression_tokens, next_token = get_tokens_until_one_of(tokens, [","])
+            expression = OrderByItemParser.parse(iter(expression_tokens))
+            expressions.append(expression)
+
+        return OrderByClause(*expressions)
+
+
+class OrderByItemParser:
+    @staticmethod
+    def parse(tokens):
+        expression_tokens, next_token = get_tokens_until_one_of(tokens, ["asc", "desc"])
+        expression = ExpressionParser.parse(iter(expression_tokens))
+        if next_token == "asc":
+            has_asc = True
+            has_desc = False
+        elif next_token == "desc":
+            has_asc = False
+            has_desc = True
+        else:
+            has_asc = False
+            has_desc = False
+
+        return OrderByItem(expression, has_asc=has_asc, has_desc=has_desc)
+
+
+class LimitClauseParser:
+    @staticmethod
+    def parse(tokens):
+        next_token = next(tokens)
+        if next_token == "all":
+            limit_all = True
+            expression = None
+        else:
+            limit_all = False
+            expression = ExpressionParser.parse(iter([next_token]))
+        return LimitClause(limit_all, expression)
+
+
+class OffsetClauseParser:
+    @staticmethod
+    def parse(tokens):
+        expression = ExpressionParser.parse(tokens)
+        return OffsetClause(expression)
 
 
 class ExpressionListParser:

@@ -418,3 +418,67 @@ WHERE x = 3
 HAVING (SUM(x) > 50);
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_order_by():
+    sql = "SELECT * from t order by col"
+    expected = """
+SELECT *
+FROM t
+ORDER BY col
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_order_by_mutliple_fields():
+    sql = "SELECT * from t order by col, 2"
+    expected = """
+SELECT *
+FROM t
+ORDER BY
+ col,
+ 2
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_order_by_mutliple_fields_order():
+    sql = "SELECT * from t order by col DESC, 2 ASC"
+    expected = """
+SELECT *
+FROM t
+ORDER BY
+ col DESC,
+ 2 ASC
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_limit():
+    sql = "SELECT * from t limit 5"
+    expected = """
+SELECT *
+FROM t
+LIMIT 5
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_limit_all():
+    sql = "SELECT * from t limit all"
+    expected = """
+SELECT *
+FROM t
+LIMIT ALL
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_offset():
+    sql = "SELECT * from t offset 5"
+    expected = """
+SELECT *
+FROM t
+OFFSET 5
+"""
+    assert format_sql(sql) == expected.strip()
