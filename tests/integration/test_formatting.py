@@ -378,4 +378,32 @@ GROUP BY (col1, col2, col3)
     assert format_sql(sql) == expected.strip()
 
 
-# TODO: group by ROLLUP, CUBE, ...
+def test_where_and_group_by():
+    sql = "SELECT count(*) from t where x =3 GROUP BY col1;"
+    expected = """
+SELECT COUNT(*)
+FROM t
+WHERE x = 3
+GROUP BY col1;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_group_by_parenthesis_rollup():
+    sql = "SELECT * from t GROUP BY ROLLUP (col)"
+    expected = """
+SELECT *
+FROM t
+GROUP BY ROLLUP (col)
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_group_by_multiple_elements_parenthesis_rollup():
+    sql = "SELECT * from t GROUP BY ROLLUP (col1, col2, col3);"
+    expected = """
+SELECT *
+FROM t
+GROUP BY ROLLUP (col1, col2, col3);
+"""
+    assert format_sql(sql) == expected.strip()

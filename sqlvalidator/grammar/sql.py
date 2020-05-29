@@ -177,22 +177,32 @@ class WhereClause(Expression):
 
 
 class GroupByClause(Expression):
-    def __init__(self, *args):
+    def __init__(self, *args, rollup=False):
         self.args = args
+        self.rollup = rollup
 
     def __str__(self):
         if len(self.args) > 1:
-            return "\n{}".format(",\n".join(map(str, self.args))).replace("\n", "\n ")
-        return " " + transform(self.args[0])
+            group_by_str = "\n{}".format(",\n".join(map(str, self.args))).replace(
+                "\n", "\n "
+            )
+        else:
+            group_by_str = " " + transform(self.args[0])
+        if self.rollup:
+            group_by_str = " ROLLUP{}".format(group_by_str)
+        return group_by_str
 
     def __repr__(self):
-        return "<GroupByClause: {}>".format(", ".join(map(repr, self.args)))
+        return "<GroupByClause: {} - rollup={}>".format(
+            ", ".join(map(repr, self.args)), self.rollup
+        )
 
     def __eq__(self, other):
         return (
             type(self) == type(other)
             and len(self.args) == len(other.args)
             and all(a == o for a, o in zip(self.args, other.args))
+            and self.rollup == other.rollup
         )
 
 

@@ -71,8 +71,10 @@ class SelectStatementParser:
             from_statement = None
 
         if next_token == "where":
-            where_clause = WhereClauseParser.parse(tokens)
-            next_token = next(tokens, None)
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens, ["group", "having", ";"]
+            )
+            where_clause = WhereClauseParser.parse(iter(expression_tokens))
         else:
             where_clause = None
 
@@ -80,7 +82,10 @@ class SelectStatementParser:
             next_token = next(tokens, None)
             if not next_token == "by":
                 raise ParsingError("Missing BY after GROUP")
-            group_by_clause = GroupByParser.parse(tokens)
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens, ["having", ";"]
+            )
+            group_by_clause = GroupByParser.parse(iter(expression_tokens))
         else:
             group_by_clause = None
 
@@ -113,19 +118,24 @@ class FromStatementParser:
 class WhereClauseParser:
     @staticmethod
     def parse(tokens):
-        expression_tokens, next_token = get_tokens_until_one_of(
-            tokens, ["group", "having"]
-        )
-        expression = ExpressionParser.parse(iter(expression_tokens))
+        expression = ExpressionParser.parse(tokens)
         return WhereClause(expression)
 
 
 class GroupByParser:
     @staticmethod
     def parse(tokens):
-        expression_tokens, next_token = get_tokens_until_one_of(tokens, ["having"])
+        next_token = next(tokens)
+        if next_token == "rollup":
+            rollup = True
+            next_token = None
+        else:
+            rollup = False
+        expression_tokens, _ = get_tokens_until_one_of(
+            tokens, [], first_token=next_token
+        )
         expressions = ExpressionListParser.parse(iter(expression_tokens))
-        return GroupByClause(*expressions)
+        return GroupByClause(*expressions, rollup=rollup)
 
 
 class ExpressionListParser:
