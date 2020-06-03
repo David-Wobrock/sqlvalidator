@@ -131,3 +131,28 @@ def test_group_by_known_column():
 def test_group_by_unknown_column_with_from():
     sql = "SELECT COUNT(y) FROM (select y from 'table') GROUP BY x"
     assert_invalid_sql(sql)
+
+
+def test_having_non_boolean_constant():
+    sql = "SELECT 2 HAVING 1;"
+    assert_invalid_sql(sql)
+
+
+def test_having_condition_constants():
+    sql = "SELECT 2 HAVING 1 = 1;"
+    assert_valid_sql(sql)
+
+
+def test_having_unknown_column():
+    sql = "SELECT 1 HAVING x"
+    assert_invalid_sql(sql)
+
+
+def test_having_unknown_column_parenthesis():
+    sql = "SELECT 1 HAVING ((x))"
+    assert_invalid_sql(sql)
+
+
+def test_having_multiple_unknown_column_parenthesis():
+    sql = "SELECT 1 HAVING 1=1, ((x))"
+    assert_invalid_sql(sql)

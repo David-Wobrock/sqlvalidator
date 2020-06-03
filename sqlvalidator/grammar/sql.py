@@ -105,6 +105,8 @@ class SelectStatement:
             errors += self.where_clause.validate(known_fields)
         if self.group_by_clause:
             errors += self.group_by_clause.validate(known_fields, self.expressions)
+        if self.having_clause:
+            errors += self.having_clause.validate(known_fields)
         return errors
 
     @property
@@ -245,7 +247,16 @@ class GroupByClause(Expression):
 
 
 class HavingClause(Expression):
-    pass
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        errors += self.value.validate(known_fields)
+        if self.value.return_type != bool:
+            errors.append(
+                "The argument of WHERE must be type boolean, not type {}".format(
+                    self.value.return_type
+                )
+            )
+        return errors
 
 
 class OrderByClause(Expression):
