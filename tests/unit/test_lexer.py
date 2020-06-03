@@ -83,6 +83,12 @@ def test_integer():
     assert actual == expected
 
 
+def test_negative_integer():
+    actual = ExpressionParser.parse(to_tokens("-2"))
+    expected = Integer(-2)
+    assert actual == expected
+
+
 def test_addition():
     actual = ExpressionParser.parse(to_tokens("2+4"))
     expected = Addition(Integer(2), Integer(4))

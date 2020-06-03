@@ -292,6 +292,9 @@ class ExpressionParser:
                 arguments = ExpressionListParser.parse(iter(argument_tokens))
                 expression = FunctionCall(main_token, *arguments)
                 next_token = next(tokens, None)
+            elif next_token is not None and main_token == "-" and next_token.isdigit():
+                expression = Integer(-int(next_token))
+                next_token = next(tokens, None)
             else:
                 expression = Column(main_token)
 

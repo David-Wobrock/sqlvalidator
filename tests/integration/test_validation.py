@@ -103,6 +103,11 @@ def test_group_by_unknown_position_parenthesis():
     assert_invalid_sql(sql)
 
 
+def test_group_by_negative_position():
+    sql = "SELECT 1 GROUP BY -1;"
+    assert_invalid_sql(sql)
+
+
 def test_group_by_unknown_column():
     sql = "SELECT 1 GROUP BY x"
     assert_invalid_sql(sql)
