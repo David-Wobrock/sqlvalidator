@@ -107,6 +107,8 @@ class SelectStatement:
             errors += self.group_by_clause.validate(known_fields, self.expressions)
         if self.having_clause:
             errors += self.having_clause.validate(known_fields)
+        if self.order_by_clause:
+            errors += self.order_by_clause.validate(known_fields, self.expressions)
         return errors
 
     @property
@@ -281,6 +283,12 @@ class OrderByClause(Expression):
             and all(a == o for a, o in zip(self.args, other.args))
         )
 
+    def validate(self, known_fields, select_expressions):
+        errors = super().validate(known_fields)
+        for arg in self.args:
+            errors += arg.validate(known_fields, select_expressions)
+        return errors
+
 
 class OrderByItem(Expression):
     def __init__(self, expression, has_asc=False, has_desc=False):
@@ -307,6 +315,21 @@ class OrderByItem(Expression):
             and self.has_asc == other.has_asc
             and self.has_desc == other.has_desc
         )
+
+    def validate(self, known_fields, select_expressions):
+        errors = super().validate(known_fields)
+        value = self.value
+        while isinstance(value, Parenthesis):
+            value = value.value
+
+        if isinstance(value, Integer):
+            if value.value <= 0 or value.value > len(select_expressions):
+                errors.append(
+                    "ORDER BY position {} is not in select list".format(value.value)
+                )
+        else:
+            errors += self.value.validate(known_fields)
+        return errors
 
 
 class LimitClause(Expression):

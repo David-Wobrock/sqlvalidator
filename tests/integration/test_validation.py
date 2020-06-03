@@ -88,6 +88,11 @@ def test_where_clause_not_boolean_but_integer():
     assert_invalid_sql(sql)
 
 
+def test_group_without_by():
+    sql = "SELECT 1 GROUP 1"
+    assert_invalid_sql(sql)
+
+
 def test_group_by_existing_position():
     sql = "SELECT 1 GROUP BY 1"
     assert_valid_sql(sql)
@@ -155,4 +160,39 @@ def test_having_unknown_column_parenthesis():
 
 def test_having_multiple_unknown_column_parenthesis():
     sql = "SELECT 1 HAVING 1=1, ((x))"
+    assert_invalid_sql(sql)
+
+
+def test_order_without_by():
+    sql = "SELECT 1 ORDER 1"
+    assert_invalid_sql(sql)
+
+
+def test_order_by_known_position():
+    sql = "SELECT 1 ORDER BY ((1))"
+    assert_valid_sql(sql)
+
+
+def test_order_by_unknown_position():
+    sql = "SELECT 1 ORDER BY 2"
+    assert_invalid_sql(sql)
+
+
+def test_order_by_unknown_column():
+    sql = "SELECT 1 ORDER BY x"
+    assert_invalid_sql(sql)
+
+
+def test_order_by_unknown_column_parenthesis():
+    sql = "SELECT 1 ORDER BY (x)"
+    assert_invalid_sql(sql)
+
+
+def test_order_by_known_column():
+    sql = "SELECT COUNT(y) FROM (select x, y from 'table') ORDER BY x"
+    assert_valid_sql(sql)
+
+
+def test_order_by_unknown_column_with_from():
+    sql = "SELECT COUNT(y) FROM (select y from 'table') ORDER BY x"
     assert_invalid_sql(sql)
