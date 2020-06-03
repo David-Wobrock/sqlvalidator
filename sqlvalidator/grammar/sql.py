@@ -103,6 +103,8 @@ class SelectStatement:
             errors += e.validate(known_fields)
         if self.where_clause:
             errors += self.where_clause.validate(known_fields)
+        if self.group_by_clause:
+            errors += self.group_by_clause.validate(known_fields, self.expressions)
         return errors
 
     @property
@@ -224,6 +226,22 @@ class GroupByClause(Expression):
             and all(a == o for a, o in zip(self.args, other.args))
             and self.rollup == other.rollup
         )
+
+    def validate(self, known_fields, select_expressions):
+        errors = super().validate(known_fields)
+        for arg in self.args:
+            while isinstance(arg, Parenthesis):
+                arg = arg.args[0]
+            if isinstance(arg, Integer) and (
+                arg.value <= 0 or arg.value > len(select_expressions)
+            ):
+                errors.append(
+                    "GROUP BY position {} is not in select list".format(arg.value)
+                )
+            elif isinstance(arg, (Column, String)) and arg.value not in known_fields:
+                errors.append('column "{}" does not exist'.format(arg.value))
+
+        return errors
 
 
 class HavingClause(Expression):
@@ -407,6 +425,10 @@ class Parenthesis(Expression):
             and len(self.args) == len(other.args)
             and all(a == o for a, o in zip(self.args, other.args))
         )
+
+    @property
+    def value(self):
+        return self.args[0].value
 
     def validate(self, known_fields):
         errors = super().validate(known_fields)

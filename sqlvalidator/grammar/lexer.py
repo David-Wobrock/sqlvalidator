@@ -39,7 +39,7 @@ class SQLStatementParser:
 
 
 class SelectStatementParser:
-    keywords = (";", "from", "where")
+    keywords = (";", "from", "where", "group", "having", "order", "limit", "offset")
 
     @classmethod
     def parse(cls, tokens):

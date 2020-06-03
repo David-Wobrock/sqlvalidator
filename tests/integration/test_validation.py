@@ -3,7 +3,7 @@ import sqlvalidator
 
 def assert_valid_sql(sql):
     sql_query = sqlvalidator.parse(sql)
-    assert sql_query.is_valid() is True
+    assert sql_query.is_valid() is True, sql_query.errors
 
 
 def assert_invalid_sql(sql):
@@ -85,4 +85,44 @@ def test_where_clause_not_boolean_but_string():
 
 def test_where_clause_not_boolean_but_integer():
     sql = "SELECT 1 WHERE 5"
+    assert_invalid_sql(sql)
+
+
+def test_group_by_existing_position():
+    sql = "SELECT 1 GROUP BY 1"
+    assert_valid_sql(sql)
+
+
+def test_group_by_unknown_position():
+    sql = "SELECT 1 GROUP BY 2"
+    assert_invalid_sql(sql)
+
+
+def test_group_by_unknown_position_parenthesis():
+    sql = "SELECT 1 GROUP BY ((2));"
+    assert_invalid_sql(sql)
+
+
+def test_group_by_unknown_column():
+    sql = "SELECT 1 GROUP BY x"
+    assert_invalid_sql(sql)
+
+
+def test_group_by_implicit_column():
+    sql = "SELECT COUNT(y) FROM 'table' GROUP BY x"
+    assert_valid_sql(sql)
+
+
+def test_group_by_known_column_star():
+    sql = "SELECT COUNT(y) FROM (select * from 'table') GROUP BY x"
+    assert_valid_sql(sql)
+
+
+def test_group_by_known_column():
+    sql = "SELECT COUNT(y) FROM (select x, y from 'table') GROUP BY x"
+    assert_valid_sql(sql)
+
+
+def test_group_by_unknown_column_with_from():
+    sql = "SELECT COUNT(y) FROM (select y from 'table') GROUP BY x"
     assert_invalid_sql(sql)

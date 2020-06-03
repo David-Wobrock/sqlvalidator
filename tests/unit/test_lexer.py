@@ -271,6 +271,12 @@ def test_select_distinct_on():
     assert actual == expected
 
 
+def test_group_by_without_from():
+    actual = SQLStatementParser.parse(to_tokens("SELECT 1 GROUP BY 2"))
+    expected = SelectStatement(expressions=[Integer(1)], group_by_clause=[Integer(2)],)
+    assert actual == expected
+
+
 def test_order_by_clause():
     actual = SQLStatementParser.parse(to_tokens("SELECT col FROM t ORDER BY col, 2"))
     expected = SelectStatement(
