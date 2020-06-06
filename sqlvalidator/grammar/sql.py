@@ -96,9 +96,6 @@ class SelectStatement:
         else:
             known_fields = set()
 
-        if "*" in known_fields:
-            return []
-
         for e in self.expressions:
             errors += e.validate(known_fields)
         if self.where_clause:
@@ -109,6 +106,8 @@ class SelectStatement:
             errors += self.having_clause.validate(known_fields)
         if self.order_by_clause:
             errors += self.order_by_clause.validate(known_fields, self.expressions)
+        if self.limit_clause:
+            errors += self.limit_clause.validate(known_fields)
         return errors
 
     @property
@@ -141,6 +140,12 @@ class SelectStatement:
             and self.from_statement == other.from_statement
             and len(self.expressions) == len(other.expressions)
             and all(a == o for a, o in zip(self.expressions, other.expressions))
+            and self.where_clause == other.where_clause
+            and self.group_by_clause == other.group_by_clause
+            and self.having_clause == other.having_clause
+            and self.order_by_clause == other.order_by_clause
+            and self.limit_clause == other.limit_clause
+            and self.offset_clause == other.offset_clause
         )
 
 
@@ -242,7 +247,11 @@ class GroupByClause(Expression):
                 errors.append(
                     "GROUP BY position {} is not in select list".format(arg.value)
                 )
-            elif isinstance(arg, (Column, String)) and arg.value not in known_fields:
+            elif (
+                isinstance(arg, (Column, String))
+                and arg.value not in known_fields
+                and "*" not in known_fields
+            ):
                 errors.append('column "{}" does not exist'.format(arg.value))
 
         return errors
@@ -350,6 +359,18 @@ class LimitClause(Expression):
     def __eq__(self, other):
         return super().__eq__(other) and self.limit_all == other.limit_all
 
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        value = self.value
+        while isinstance(value, Parenthesis):
+            value = value.value
+        if self.value.return_type != int:
+            errors.append("argument of LIMIT must be integer")
+        else:
+            if isinstance(value, Integer) and value.value < 0:
+                errors.append("LIMIT must not be negative")
+        return errors
+
 
 class OffsetClause(Expression):
     pass
@@ -382,7 +403,7 @@ class FunctionCall(Expression):
 class Column(Expression):
     def validate(self, known_fields):
         errors = super().validate(known_fields)
-        if self.value not in known_fields:
+        if self.value not in known_fields and "*" not in known_fields:
             errors.append("The column {} was not found".format(self.value))
         return errors
 
@@ -462,7 +483,9 @@ class Parenthesis(Expression):
 
     @property
     def value(self):
-        return self.args[0].value
+        if isinstance(self.args[0], Parenthesis):
+            return self.args[0].value
+        return self.args[0]
 
     def validate(self, known_fields):
         errors = super().validate(known_fields)

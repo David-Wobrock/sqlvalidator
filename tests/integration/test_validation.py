@@ -196,3 +196,38 @@ def test_order_by_known_column():
 def test_order_by_unknown_column_with_from():
     sql = "SELECT COUNT(y) FROM (select y from 'table') ORDER BY x"
     assert_invalid_sql(sql)
+
+
+def test_limit_integer():
+    sql = "SELECT 1 LIMIT 3"
+    assert_valid_sql(sql)
+
+
+def test_limit_zero():
+    sql = "SELECT 1 LIMIT 0;"
+    assert_valid_sql(sql)
+
+
+def test_limit_negative_integer():
+    sql = "SELECT 1 LIMIT -3"
+    assert_invalid_sql(sql)
+
+
+def test_limit_integer_parenthesis():
+    sql = "SELECT 1 LIMIT (((3)))"
+    assert_valid_sql(sql)
+
+
+def test_limit_column():
+    sql = "SELECT 1 LIMIT x"
+    assert_invalid_sql(sql)
+
+
+def test_limit_column_with_from():
+    sql = "SELECT 1 from table LIMIT x;"
+    assert_invalid_sql(sql)
+
+
+def test_limit_multiple_integers():
+    sql = "SELECT 1 from table LIMIT 1, 2;"
+    assert_invalid_sql(sql)

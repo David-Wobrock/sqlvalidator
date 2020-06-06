@@ -19,6 +19,8 @@ from sqlvalidator.grammar.sql import (
     WhereClause,
     OrderByClause,
     OrderByItem,
+    GroupByClause,
+    LimitClause,
 )
 from sqlvalidator.grammar.tokeniser import to_tokens
 
@@ -110,6 +112,12 @@ def test_conditional_expression():
 def test_parenthesis():
     actual = ExpressionParser.parse(to_tokens("(field)"))
     expected = Parenthesis(Column("field"))
+    assert actual == expected
+
+
+def test_multiple_parentheses():
+    actual = ExpressionParser.parse(to_tokens("((2))"))
+    expected = Parenthesis(Parenthesis(Integer(2)))
     assert actual == expected
 
 
@@ -279,7 +287,9 @@ def test_select_distinct_on():
 
 def test_group_by_without_from():
     actual = SQLStatementParser.parse(to_tokens("SELECT 1 GROUP BY 2"))
-    expected = SelectStatement(expressions=[Integer(1)], group_by_clause=[Integer(2)],)
+    expected = SelectStatement(
+        expressions=[Integer(1)], group_by_clause=GroupByClause(*[Integer(2)])
+    )
     assert actual == expected
 
 
@@ -290,6 +300,18 @@ def test_order_by_clause():
         from_statement=Table("t"),
         order_by_clause=OrderByClause(
             OrderByItem(Column("col")), OrderByItem(Integer(2))
+        ),
+    )
+    assert actual == expected
+
+
+def test_limit_parentheses():
+    actual = SQLStatementParser.parse(to_tokens("SELECT 1 LIMIT (((3)))"))
+    expected = SelectStatement(
+        expressions=[Integer(1)],
+        limit_clause=LimitClause(
+            limit_all=False,
+            expression=Parenthesis(Parenthesis(Parenthesis(Integer(3)))),
         ),
     )
     assert actual == expected

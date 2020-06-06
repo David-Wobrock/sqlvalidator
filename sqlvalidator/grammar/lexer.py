@@ -232,7 +232,10 @@ class LimitClauseParser:
             expression = None
         else:
             limit_all = False
-            expression = ExpressionParser.parse(iter([next_token]))
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens, [], first_token=next_token
+            )
+            expression = ExpressionParser.parse(iter(expression_tokens))
         return LimitClause(limit_all, expression)
 
 
