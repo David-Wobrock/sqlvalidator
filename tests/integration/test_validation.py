@@ -231,3 +231,23 @@ def test_limit_column_with_from():
 def test_limit_multiple_integers():
     sql = "SELECT 1 from table LIMIT 1, 2;"
     assert_invalid_sql(sql)
+
+
+def test_offset():
+    sql = "SELECT 1 from table OFFSET 1;"
+    assert_valid_sql(sql)
+
+
+def test_offset_parenthesis():
+    sql = "SELECT 1 from table OFFSET ((1));"
+    assert_valid_sql(sql)
+
+
+def test_offset_negative():
+    sql = "SELECT 1 from table OFFSET -1;"
+    assert_invalid_sql(sql)
+
+
+def test_offset_variable():
+    sql = "SELECT 1 from table OFFSET (x)"
+    assert_invalid_sql(sql)

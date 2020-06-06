@@ -108,6 +108,8 @@ class SelectStatement:
             errors += self.order_by_clause.validate(known_fields, self.expressions)
         if self.limit_clause:
             errors += self.limit_clause.validate(known_fields)
+        if self.offset_clause:
+            errors += self.offset_clause.validate(known_fields)
         return errors
 
     @property
@@ -365,15 +367,25 @@ class LimitClause(Expression):
         while isinstance(value, Parenthesis):
             value = value.value
         if self.value.return_type != int:
+            errors.append("argument of OFFSET must not contain variables")
+        else:
+            if isinstance(value, Integer) and value.value < 0:
+                errors.append("OFFSET must not be negative")
+        return errors
+
+
+class OffsetClause(Expression):
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        value = self.value
+        while isinstance(value, Parenthesis):
+            value = value.value
+        if self.value.return_type != int:
             errors.append("argument of LIMIT must be integer")
         else:
             if isinstance(value, Integer) and value.value < 0:
                 errors.append("LIMIT must not be negative")
         return errors
-
-
-class OffsetClause(Expression):
-    pass
 
 
 class FunctionCall(Expression):
