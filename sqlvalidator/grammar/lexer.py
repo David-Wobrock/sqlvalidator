@@ -326,6 +326,18 @@ class ExpressionParser:
             symbol = next_token
             right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
             expression = Condition(expression, symbol, right_hand)
+        elif next_token == "between":
+            symbol = next_token
+            right_hand_left, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            if next_token != "and":
+                raise ParsingError("expected AND")
+            right_hand_right, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            right_hand = BooleanCondition(
+                "and",
+                right_hand_left,
+                right_hand_right,
+            )
+            expression = Condition(expression, symbol, right_hand)
 
         if next_token in BooleanCondition.PREDICATES:
             left_hand = expression
