@@ -510,3 +510,41 @@ FROM (
 GROUP BY url_hash
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_aliased_subquery():
+    sql = """
+    SELECT subquery.field
+    FROM (SELECT * FROM `table`
+    WHERE value <> 0) subquery
+    GROUP BY subquery.col
+"""
+    expected = """
+SELECT subquery.field
+FROM (
+ SELECT *
+ FROM `table`
+ WHERE value <> 0
+) subquery
+GROUP BY subquery.col
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_aliased_as_subquery():
+    sql = """
+    SELECT AGG(subquery.field)
+    FROM (SELECT * FROM `table`
+    WHERE value <> 0) as subquery
+    GROUP BY subquery.col
+"""
+    expected = """
+SELECT AGG(subquery.field)
+FROM (
+ SELECT *
+ FROM `table`
+ WHERE value <> 0
+) AS subquery
+GROUP BY subquery.col
+"""
+    assert format_sql(sql) == expected.strip()

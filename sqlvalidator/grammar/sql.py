@@ -48,17 +48,28 @@ class SelectStatement:
                 )
 
         if len(self.expressions) == 1:
-            statement_str += " {}".format(self.expressions[0])
+            statement_str += " {}".format(transform(self.expressions[0]))
         else:
-            statement_str += "\n {}".format(",\n ".join(map(str, self.expressions)))
+            statement_str += "\n {}".format(
+                ",\n ".join(map(transform, self.expressions))
+            )
 
         if self.from_statement:
+            if isinstance(self.from_statement, Alias):
+                alias = self.from_statement
+                self.from_statement = self.from_statement.expression
+            else:
+                alias = None
+
             if isinstance(self.from_statement, Parenthesis):
                 from_str = "(\n{}\n)".format(
                     self.from_statement.args[0].transform(is_subquery=True)
                 )
             else:
                 from_str = str(self.from_statement)
+
+            if alias:
+                from_str = alias.transform(from_str)
             statement_str += "\nFROM {}".format(from_str)
 
         if self.where_clause:
@@ -517,10 +528,9 @@ class Alias(Expression):
         self.alias = alias
         self.with_as = with_as
 
-    def __str__(self):
-        return "{}{}{}".format(
-            self.expression, " AS " if self.with_as else " ", self.alias,
-        )
+    def transform(self, expression=None):
+        expression = expression or self.expression
+        return "{}{}{}".format(expression, " AS " if self.with_as else " ", self.alias,)
 
     def __repr__(self):
         return "<Alias: {!r} as={} {}>".format(

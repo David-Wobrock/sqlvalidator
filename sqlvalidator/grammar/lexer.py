@@ -70,8 +70,10 @@ class SelectStatementParser:
         expressions = ExpressionListParser.parse(iter(expression_tokens))
 
         if next_token == "from":
-            from_statement = FromStatementParser.parse(tokens)
-            next_token = next(tokens, None)
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens, ["where", "group", "having", "order", "limit", "offset", ";"]
+            )
+            from_statement = FromStatementParser.parse(iter(expression_tokens))
         else:
             from_statement = None
 
@@ -156,6 +158,16 @@ class FromStatementParser:
             expression = Table(StringParser.parse(tokens, next_token))
         else:
             expression = Table(next_token)
+
+        next_token = next(tokens, None)
+        if next_token is not None:
+            if next_token == "as":
+                with_as = True
+                alias = next(tokens)
+            else:
+                with_as = False
+                alias = next_token
+            expression = Alias(expression, alias, with_as)
         return expression
 
 

@@ -288,7 +288,7 @@ def test_select_distinct_on():
 def test_group_by_without_from():
     actual = SQLStatementParser.parse(to_tokens("SELECT 1 GROUP BY 2"))
     expected = SelectStatement(
-        expressions=[Integer(1)], group_by_clause=GroupByClause(*[Integer(2)])
+        expressions=[Integer(1)], group_by_clause=GroupByClause(Integer(2))
     )
     assert actual == expected
 
@@ -313,5 +313,30 @@ def test_limit_parentheses():
             limit_all=False,
             expression=Parenthesis(Parenthesis(Parenthesis(Integer(3)))),
         ),
+    )
+    assert actual == expected
+
+
+def test_subquery():
+    actual = SQLStatementParser.parse(
+        to_tokens(
+            "SELECT col"
+            " from (select count(*) col"
+            " from table group by x) WHERE col > 10 ORDER BY col DESC"
+        )
+    )
+    expected = SelectStatement(
+        expressions=[Column("col")],
+        from_statement=Parenthesis(
+            SelectStatement(
+                expressions=[
+                    Alias(FunctionCall("count", Column("*")), "col", with_as=False)
+                ],
+                from_statement=Table("table"),
+                group_by_clause=GroupByClause(Column("x")),
+            )
+        ),
+        where_clause=WhereClause(Condition(Column("col"), ">", Integer(10))),
+        order_by_clause=OrderByClause(OrderByItem(Column("col"), has_desc=True)),
     )
     assert actual == expected
