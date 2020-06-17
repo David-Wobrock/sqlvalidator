@@ -62,13 +62,15 @@ No file reformatted.
 * Status code 1 means some files would reformatted.
 
 
-**Warning**: Since this library is an attempt to implement a SQL parser, major SQL constructs and syntax are still missing.
-
 ## API
 
 ### Formatting
 
-`formatted_sql = sqlvalidator.format_sql("SELECT * FROM table")`
+```python
+import sqlvalidator
+
+formatted_sql = sqlvalidator.format_sql("SELECT * FROM table")
+```
 
 ### Validation
 
@@ -100,7 +102,9 @@ Ideally, this package should provide a basic SQL validation:
 
 #### Testing
 
-`pytest`
+```
+pytest
+```
 
 #### Publishing
 
