@@ -171,13 +171,7 @@ def test_between_where_clause():
     actual = WhereClauseParser.parse(to_tokens("col between 3 and 5"))
     expected = WhereClause(
         Condition(
-            Column("col"),
-            "between",
-            BooleanCondition(
-                "and",
-                Integer(3),
-                Integer(5),
-            )
+            Column("col"), "between", BooleanCondition("and", Integer(3), Integer(5),)
         )
     )
     assert actual == expected
