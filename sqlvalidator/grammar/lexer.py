@@ -18,6 +18,7 @@ from sqlvalidator.grammar.sql import (
     OrderByItem,
     LimitClause,
     OffsetClause,
+    Null,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -291,6 +292,8 @@ class ExpressionParser:
             expression = Integer(main_token)
         elif main_token in Boolean.BOOLEAN_VALUES:
             expression = Boolean(main_token)
+        elif main_token in Null.VALUES:
+            expression = Null()
         elif main_token == "(":
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             arguments = ExpressionListParser.parse(iter(argument_tokens))
@@ -324,6 +327,16 @@ class ExpressionParser:
 
         if next_token in Condition.PREDICATES:
             symbol = next_token
+            if next_token == "is":
+                next_next_token = next(tokens)
+                if next_next_token == "not":
+                    symbol = "is not"
+                else:
+                    tokens, _ = get_tokens_until_one_of(
+                        tokens, [], first_token=next_next_token
+                    )
+                    tokens = iter(tokens)
+
             right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
             expression = Condition(expression, symbol, right_hand)
         elif next_token == "between":

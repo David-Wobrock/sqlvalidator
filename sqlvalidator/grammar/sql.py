@@ -456,6 +456,20 @@ class Integer(Expression):
         return int
 
 
+class Null(Expression):
+    VALUES = ("null",)
+
+    def __init__(self):
+        super().__init__(None)
+
+    def __str__(self):
+        return "NULL"
+
+    @property
+    def return_type(self):
+        return type(None)
+
+
 class Boolean(Expression):
     TRUE_VALUES = (
         "true",

@@ -548,3 +548,26 @@ FROM (
 GROUP BY subquery.col
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_x():
+    sql = """
+SELECT a.field field
+FROM (SELECT field,
+field_id
+FROM test_1.table_2
+WHERE col <> 0 AND long__name__col IS NOT NULL) a
+ORDER BY a.field_id
+"""
+    expected = """
+SELECT a.field field
+FROM (
+ SELECT
+  field,
+  field_id
+ FROM test_1.table_2
+ WHERE col <> 0 AND long__name__col IS NOT NULL
+) a
+ORDER BY a.field_id
+"""
+    assert format_sql(sql) == expected.strip()
