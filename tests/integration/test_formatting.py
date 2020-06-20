@@ -550,7 +550,7 @@ GROUP BY subquery.col
     assert format_sql(sql) == expected.strip()
 
 
-def test_x():
+def test_is_not_null_condition():
     sql = """
 SELECT a.field field
 FROM (SELECT field,
