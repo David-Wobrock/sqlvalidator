@@ -571,3 +571,52 @@ FROM (
 ORDER BY a.field_id
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_basic_join():
+    sql = """
+SELECT field
+FROM table JOIN other_table USING (field)
+"""
+    expected = """
+SELECT field
+FROM table
+JOIN
+ other_table
+USING (field)
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_parenthesis_join():
+    sql = """
+SELECT field
+FROM table JOIN (other_table) USING (field)
+"""
+    expected = """
+SELECT field
+FROM table
+JOIN (
+ other_table
+)
+USING (field)
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_parenthesis_join_subquery():
+    sql = """
+SELECT field
+FROM table JOIN (SELECT * from other_table WHERE date > "2020-01-01") USING (field)
+"""
+    expected = """
+SELECT field
+FROM table
+JOIN (
+ SELECT *
+ FROM other_table
+ WHERE date > "2020-01-01"
+)
+USING (field)
+"""
+    assert format_sql(sql) == expected.strip()

@@ -1,4 +1,8 @@
-from sqlvalidator.grammar.tokeniser import to_tokens, split_with_sep
+from sqlvalidator.grammar.tokeniser import (
+    to_tokens,
+    split_with_sep,
+    get_tokens_until_not_in,
+)
 
 
 def test_split_with_sep_one_element():
@@ -36,3 +40,13 @@ def test_parenthesis_arithmetic():
 def test_newlines_and_spaces():
     value = "  \n  (\n \n 2 \n   + \n3)   \n"
     assert list(to_tokens(value)) == ["(", "2", "+", "3", ")"]
+
+
+def test_keep_tokens_in():
+    tokens = iter(["foo", "bar", "baz"])
+    assert get_tokens_until_not_in(tokens, ["foo", "bar"]) == (["foo", "bar"], "baz")
+
+
+def test_keep_tokens_in_parenthesis():
+    tokens = iter(["foo", "(", "no", ")", "bar", "baz"])
+    assert get_tokens_until_not_in(tokens, ["foo", "bar"]) == (["foo"], "(",)

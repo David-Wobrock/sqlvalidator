@@ -601,6 +601,48 @@ class Table(Expression):
     pass
 
 
+class Join(Expression):
+    VALUES = ("join", "inner", "left", "right", "full", "cross")
+
+    def __init__(self, join_type, left_from, right_from, on, using):
+        self.join_type = join_type
+        self.left_from = left_from
+        self.right_from = right_from
+        self.on = on
+        self.using = using
+
+    def __str__(self):
+        right_from = self.right_from
+        num_parenthesis = 0
+        while isinstance(right_from, Parenthesis):
+            right_from = right_from.args[0]
+            num_parenthesis += 1
+
+        right_element = "\n" + transform(right_from)
+        right_element = right_element.replace("\n", "\n ")
+        if num_parenthesis:
+            right_element = " {}{}\n{}".format(
+                "(" * num_parenthesis, right_element, ")" * num_parenthesis,
+            )
+
+        join_str = "{}\n{}{}\n".format(
+            transform(self.left_from), self.join_type.upper(), right_element,
+        )
+        if self.on:
+            join_str += "ON {}".format(transform(self.on))
+        elif self.using:
+            join_str += "USING {}".format(transform(self.using))
+        return join_str
+
+
+class OnClause(Expression):
+    pass
+
+
+class UsingClause(Expression):
+    pass
+
+
 class Condition(Expression):
     PREDICATES = ("=", ">", "<", "<=", ">=", "is", "like", "<>")
 

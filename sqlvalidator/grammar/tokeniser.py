@@ -30,6 +30,16 @@ def get_tokens_until_one_of(tokens, stop_words, first_token=None):
     return argument_tokens, next_token
 
 
+def get_tokens_until_not_in(tokens, kept_words, first_token=None):
+    argument_tokens = [first_token] if first_token is not None else []
+    next_token = next(tokens, None)
+    while next_token is not None and next_token in kept_words:
+        argument_tokens.append(next_token)
+        next_token = next(tokens, None)
+
+    return argument_tokens, next_token
+
+
 def split_with_sep(s: str, sep: str):
     splitted = s.split(sep)
     for word in splitted[:-1]:

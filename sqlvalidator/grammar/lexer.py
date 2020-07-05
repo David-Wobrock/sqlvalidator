@@ -19,10 +19,14 @@ from sqlvalidator.grammar.sql import (
     LimitClause,
     OffsetClause,
     Null,
+    Join,
+    OnClause,
+    UsingClause,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
     get_tokens_until_closing_parenthesis,
+    get_tokens_until_not_in,
 )
 
 
@@ -153,7 +157,10 @@ class FromStatementParser:
         next_token = next(tokens)
         if next_token == "(":
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
-            argument = SQLStatementParser.parse(iter(argument_tokens))
+            try:
+                argument = SQLStatementParser.parse(iter(argument_tokens))
+            except ParsingError:
+                argument = FromStatementParser.parse(iter(argument_tokens))
             expression = Parenthesis(argument)
         elif next_token == "'" or next_token == '"' or next_token == "`":
             expression = Table(StringParser.parse(tokens, next_token))
@@ -161,7 +168,7 @@ class FromStatementParser:
             expression = Table(next_token)
 
         next_token = next(tokens, None)
-        if next_token is not None:
+        if next_token is not None and next_token not in Join.VALUES:
             if next_token == "as":
                 with_as = True
                 alias = next(tokens)
@@ -169,7 +176,36 @@ class FromStatementParser:
                 with_as = False
                 alias = next_token
             expression = Alias(expression, alias, with_as)
+            next_token = next(tokens, None)
+
+        if next_token in Join.VALUES:
+            left_expr = expression
+            expression_tokens, next_token = get_tokens_until_not_in(
+                tokens, Join.VALUES, first_token=next_token
+            )
+            join_type = JoinTypeParser.parse(iter(expression_tokens))
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens, ("on", "using"), first_token=next_token
+            )
+            right_expr = FromStatementParser.parse(iter(expression_tokens))
+            on = using = None
+            if next_token == "on":
+                expression = ExpressionParser.parse(tokens)
+                on = OnClause(expression)
+            elif next_token == "using":
+                expressions = ExpressionParser.parse(tokens)
+                using = UsingClause(expressions)
+
+            expression = Join(join_type, left_expr, right_expr, on=on, using=using)
+
         return expression
+
+
+class JoinTypeParser:
+    @staticmethod
+    def parse(tokens):
+        # TODO: assert known join types
+        return "".join(tokens).upper()
 
 
 class WhereClauseParser:
