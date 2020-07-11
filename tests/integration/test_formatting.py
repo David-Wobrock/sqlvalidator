@@ -642,3 +642,83 @@ JOIN (
 USING (field)
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_partitioning_function():
+    sql = "SELECT *, row_number() over (partition by x) from t;"
+    expected = """
+SELECT
+ *,
+ ROW_NUMBER() OVER (
+  PARTITION BY x
+ )
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_partitioning_function_multiple_params():
+    sql = "SELECT row_number() over (partition by x,z, x+z) from t;"
+    expected = """
+SELECT ROW_NUMBER() OVER (
+ PARTITION BY
+  x,
+  z,
+  x + z
+)
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_partitioning_function():
+    sql = "SELECT *, row_number() over (partition by x order BY x) from t;"
+    expected = """
+SELECT
+ *,
+ ROW_NUMBER() OVER (
+  PARTITION BY x
+  ORDER BY x
+ )
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_partitioning_function_order_by_multiple():
+    sql = "SELECT row_number() over (partition by x,z, x+z order by x desc, z ASC)  from t;"
+    expected = """
+SELECT ROW_NUMBER() OVER (
+ PARTITION BY
+  x,
+  z,
+  x + z
+ ORDER BY
+  x DESC,
+  z ASC
+)
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_partitioning_function_order_by_no_partition():
+    sql = "SELECT row_number() over (order by x desc, z ASC)  from t;"
+    expected = """
+SELECT ROW_NUMBER() OVER (
+ ORDER BY
+  x DESC,
+  z ASC
+)
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_partitioning_function_empty():
+    sql = "SELECT row_number() over () from t;"
+    expected = """
+SELECT ROW_NUMBER() OVER ()
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()

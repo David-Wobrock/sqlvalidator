@@ -51,7 +51,12 @@ class SelectStatement:
             statement_str += " {}".format(transform(self.expressions[0]))
         else:
             statement_str += "\n {}".format(
-                ",\n ".join(map(transform, self.expressions))
+                ",\n ".join(
+                    map(
+                        lambda s: s.replace("\n", "\n "),
+                        map(transform, self.expressions),
+                    )
+                )
             )
 
         if self.from_statement:
@@ -421,6 +426,33 @@ class FunctionCall(Expression):
             and len(self.args) == len(other.args)
             and all(a == o for a, o in zip(self.args, other.args))
         )
+
+
+class AnalyticsClause(Expression):
+    def __init__(self, function, partition_by, order_by, frame_clause):
+        self.function = function
+        self.partition_by = partition_by
+        self.order_by = order_by
+        self.frame_clause = frame_clause
+
+    def __str__(self):
+        analytics_str = "{} OVER (".format(transform(self.function))
+        if self.partition_by:
+            analytics_str += "\n PARTITION BY"
+            if len(self.partition_by) > 1:
+                analytics_str += "\n  " + ",\n  ".join(
+                    map(transform, self.partition_by)
+                )
+            else:
+                analytics_str += " " + transform(self.partition_by[0])
+        if self.order_by:
+            analytics_str += "\n ORDER BY{}".format(
+                transform(self.order_by).replace("\n", "\n ")
+            )
+        # TODO: frame_clause
+
+        analytics_str += "\n)" if "\n" in analytics_str else ")"
+        return analytics_str
 
 
 class Column(Expression):

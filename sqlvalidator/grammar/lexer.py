@@ -23,6 +23,7 @@ from sqlvalidator.grammar.sql import (
     OnClause,
     UsingClause,
     ExceptClause,
+    AnalyticsClause,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -394,6 +395,43 @@ class ExpressionParser:
             symbol = next_token
             right_hand = ExpressionParser.parse(tokens)
             expression = BooleanCondition(symbol, left_hand, right_hand)
+            next_token = next(tokens, None)
+
+        if next_token == "over":
+            opening_parenthesis = next(tokens, None)
+            if opening_parenthesis != "(":
+                raise ParsingError("expected '('")
+
+            argument_tokens = iter(get_tokens_until_closing_parenthesis(tokens))
+            argument_next_token = next(argument_tokens, None)
+            if argument_next_token == "partition":
+                argument_next_token = next(argument_tokens, None)
+                if not argument_next_token or argument_next_token != "by":
+                    raise ParsingError("Missing BY after PARTITION")
+                expression_tokens, argument_next_token = get_tokens_until_one_of(
+                    argument_tokens, ["order"]  # todo frame
+                )
+                partition_by = ExpressionListParser.parse(iter(expression_tokens))
+            else:
+                partition_by = None
+
+            if argument_next_token == "order":
+                argument_next_token = next(argument_tokens, None)
+                if not argument_next_token or argument_next_token != "by":
+                    raise ParsingError("Missing BY after ORDER")
+                expression_tokens, argument_next_token = get_tokens_until_one_of(
+                    argument_tokens, []  # todo frame
+                )
+                order_by = OrderByParser.parse(iter(expression_tokens))
+            else:
+                order_by = None
+
+            expression = AnalyticsClause(
+                expression,
+                partition_by=partition_by,
+                order_by=order_by,
+                frame_clause=None,  # TODO
+            )
             next_token = next(tokens, None)
 
         if next_token == "except":
