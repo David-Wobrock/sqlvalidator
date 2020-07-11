@@ -424,6 +424,13 @@ class FunctionCall(Expression):
 
 
 class Column(Expression):
+    KEYWORDS = ("_table_suffix",)
+
+    def __str__(self):
+        if self.value in self.KEYWORDS:
+            return self.value.upper()
+        return str(self.value)
+
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         if self.value not in known_fields and "*" not in known_fields:
@@ -506,7 +513,7 @@ class Parenthesis(Expression):
         self.args = args
 
     def __str__(self):
-        return "({})".format(", ".join(map(str, self.args)))
+        return "({})".format(", ".join(map(transform, self.args)))
 
     def __repr__(self):
         return "<Parenthesis: {}>".format(", ".join(map(repr, self.args)))
@@ -625,8 +632,22 @@ class Join(Expression):
                 "(" * num_parenthesis, right_element, ")" * num_parenthesis,
             )
 
+        left_from = self.left_from
+        num_parenthesis = 0
+        while isinstance(left_from, Parenthesis):
+            left_from = left_from.args[0]
+            num_parenthesis += 1
+
+        left_element = transform(left_from)
+        if num_parenthesis:
+            left_element = "\n" + left_element
+            left_element = left_element.replace("\n", "\n ")
+            left_element = "{}{}\n{}".format(
+                "(" * num_parenthesis, left_element, ")" * num_parenthesis,
+            )
+
         join_str = "{}\n{}{}\n".format(
-            transform(self.left_from), self.join_type.upper(), right_element,
+            left_element, self.join_type.upper(), right_element,
         )
         if self.on:
             join_str += "ON {}".format(transform(self.on))
@@ -711,3 +732,17 @@ class BooleanCondition(Expression):
     @property
     def return_type(self):
         return bool
+
+
+class ExceptClause(Expression):
+    def __init__(self, expression, args):
+        super().__init__(expression)
+        self.args = args
+
+    def __str__(self):
+        except_str = "{} EXCEPT (".format(transform(self.value))
+        if len(self.args) > 1:
+            except_str += "\n {}\n".format(",\n ".join(map(transform, self.args)))
+        elif except_str:
+            except_str += transform(self.args[0])
+        return except_str + ")"

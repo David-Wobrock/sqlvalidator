@@ -79,6 +79,28 @@ FROM table_stmt;
     assert format_sql(sql) == expected.strip()
 
 
+def test_select_except_one_line():
+    sql = "select * except(field) from table_stmt;"
+    expected = """
+SELECT * EXCEPT (field)
+FROM table_stmt;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_select_except_multi_line():
+    sql = "select * except(field, col, f2) from table_stmt;"
+    expected = """
+SELECT * EXCEPT (
+ field,
+ col,
+ f2
+)
+FROM table_stmt;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_multiple_columns():
     sql = "select col, col2 from table_stmt;"
     expected = """

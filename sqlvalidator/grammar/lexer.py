@@ -22,6 +22,7 @@ from sqlvalidator.grammar.sql import (
     Join,
     OnClause,
     UsingClause,
+    ExceptClause,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -393,6 +394,15 @@ class ExpressionParser:
             symbol = next_token
             right_hand = ExpressionParser.parse(tokens)
             expression = BooleanCondition(symbol, left_hand, right_hand)
+            next_token = next(tokens, None)
+
+        if next_token == "except":
+            opening_parenthesis = next(tokens, None)
+            if opening_parenthesis != "(":
+                raise ParsingError("expected '('")
+            argument_tokens = get_tokens_until_closing_parenthesis(tokens)
+            arguments = ExpressionListParser.parse(iter(argument_tokens))
+            expression = ExceptClause(expression, arguments)
             next_token = next(tokens, None)
 
         if (
