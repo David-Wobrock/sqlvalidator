@@ -50,7 +50,30 @@ def split_with_sep(s: str, sep: str):
         yield splitted[-1]
 
 
-def to_tokens(value: str):
+def merge_stream(s, goals):
+    for element in s:
+        matching_goals = [g for g in goals if g.startswith(element)]
+        if not matching_goals:
+            yield element
+            continue
+        next_element = next(s, None)
+        if not next_element:
+            yield element
+            continue
+
+        twice_matching_goals = [
+            g for g in matching_goals if (element + next_element) == g
+        ]
+        if len(twice_matching_goals) > 1:
+            raise ValueError("Should not reach here")
+        elif twice_matching_goals:
+            yield twice_matching_goals[0]
+        else:
+            yield element
+            yield next_element
+
+
+def split_tokens(value: str):
     split_on_quotes = split_with_sep(value, "'")
     in_str = False
     for elem in split_on_quotes:
@@ -97,8 +120,25 @@ def to_tokens(value: str):
                                                                     w9, "/"
                                                                 ):
                                                                     for (
-                                                                        w
+                                                                        w11
                                                                     ) in split_with_sep(
-                                                                        w10, "="
+                                                                        w10, "=",
                                                                     ):
-                                                                        yield w.lower()
+                                                                        for (
+                                                                            w12
+                                                                        ) in split_with_sep(
+                                                                            w11, "<",
+                                                                        ):
+                                                                            for (
+                                                                                w13
+                                                                            ) in split_with_sep(
+                                                                                w12,
+                                                                                ">",
+                                                                            ):
+                                                                                yield w13.lower()
+
+
+def to_tokens(value: str):
+    tokens = split_tokens(value)
+    for s in merge_stream(tokens, ["<>", "<=", ">="]):
+        yield s

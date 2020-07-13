@@ -722,3 +722,12 @@ SELECT ROW_NUMBER() OVER ()
 FROM t;
     """
     assert format_sql(sql) == expected.strip()
+
+
+def test_long_function():
+    sql = "select (IFNULL(SUM(f1), 0) + (APPROX_COUNT_DISTINCT(IF(f2 >= DATE('2018-04-10'), f3, NULL)) - IFNULL(SUM(f4), 0)) + 50) f_1 from t;"
+    expected = """
+SELECT (IFNULL(SUM(f1), 0) + (APPROX_COUNT_DISTINCT(IF(f2 >= DATE('2018-04-10'), f3, NULL)) - IFNULL(SUM(f4), 0)) + 50) f_1
+FROM t;
+"""
+    assert format_sql(sql) == expected.strip()

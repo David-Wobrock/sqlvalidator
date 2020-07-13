@@ -42,6 +42,31 @@ def test_newlines_and_spaces():
     assert list(to_tokens(value)) == ["(", "2", "+", "3", ")"]
 
 
+def test_equal_predicate():
+    value = "x=2"
+    assert list(to_tokens(value)) == ["x", "=", "2"]
+
+
+def test_keep_predicates():
+    value = "x >= 2"
+    assert list(to_tokens(value)) == ["x", ">=", "2"]
+
+
+def test_keep_predicates_no_ending():
+    value = "x >="
+    assert list(to_tokens(value)) == ["x", ">="]
+
+
+def test_keep_different_predicate():
+    value = "x<>2"
+    assert list(to_tokens(value)) == ["x", "<>", "2"]
+
+
+def test_lt():
+    value = "x<3"
+    assert list(to_tokens(value)) == ["x", "<", "3"]
+
+
 def test_keep_tokens_in():
     tokens = iter(["foo", "bar", "baz"])
     assert get_tokens_until_not_in(tokens, ["foo", "bar"]) == (["foo", "bar"], "baz")

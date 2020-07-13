@@ -350,3 +350,17 @@ def test_subquery():
         order_by_clause=OrderByClause(OrderByItem(Column("col"), has_desc=True)),
     )
     assert actual == expected
+
+
+def test_parse_date_function1():
+    actual = ExpressionParser.parse(to_tokens("DATE('2020-01-01')"))
+    expected = FunctionCall("date", String("2020-01-01", quotes="'"))
+    assert actual == expected
+
+
+def test_parse_date_function():
+    actual = ExpressionParser.parse(to_tokens("col >= DATE('2020-01-01')"))
+    expected = Condition(
+        Column("col"), ">=", FunctionCall("date", String("2020-01-01", quotes="'"))
+    )
+    assert actual == expected
