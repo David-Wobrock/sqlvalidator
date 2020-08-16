@@ -1,3 +1,9 @@
+STRING_SPLIT_TOKENS = ("'", '"', "`")
+WHITESPACE_SPLIT_TOKENS = (" ", "\n")
+KEPT_SPLIT_TOKENS = (",", ";", "(", ")", "+", "-", "*", "/", "=", "<", ">")
+MERGE_TOKENS = ("<>", "<=", ">=")
+
+
 def get_tokens_until_closing_parenthesis(tokens):
     argument_tokens = []
     next_token = next(tokens, None)
@@ -73,72 +79,49 @@ def merge_stream(s, goals):
             yield next_element
 
 
-def split_tokens(value: str):
-    split_on_quotes = split_with_sep(value, "'")
+def _split_on_string_token(token: str, value: str):
+    split_result = split_with_sep(value, token)
     in_str = False
-    for elem in split_on_quotes:
-        if elem == "'":
+    for elem in split_result:
+        if elem == token:
             in_str = not in_str
             yield elem
         elif in_str is True:
             yield elem
         else:
-            split_on_quotes2 = split_with_sep(elem, '"')
-            in_str2 = False
-            for elem2 in split_on_quotes2:
-                if elem2 == '"':
-                    in_str2 = not in_str2
-                    yield elem2
-                elif in_str2 is True:
-                    yield elem2
-                else:
-                    split_on_quotes3 = split_with_sep(elem2, "`")
-                    in_str3 = False
-                    for elem3 in split_on_quotes3:
-                        if elem3 == "`":
-                            in_str3 = not in_str3
-                            yield elem3
-                        elif in_str3 is True:
-                            yield elem3
-                        else:
-                            for w1 in elem3.split(" "):
-                                for w2 in w1.split("\n"):
-                                    for w3 in split_with_sep(w2, ","):
-                                        for w4 in split_with_sep(w3, ";"):
-                                            for w5 in split_with_sep(w4, "("):
-                                                for w6 in split_with_sep(w5, ")"):
-                                                    for w7 in split_with_sep(w6, "+"):
-                                                        for w8 in split_with_sep(
-                                                            w7, "-"
-                                                        ):
-                                                            for w9 in split_with_sep(
-                                                                w8, "*"
-                                                            ):
-                                                                for (
-                                                                    w10
-                                                                ) in split_with_sep(
-                                                                    w9, "/"
-                                                                ):
-                                                                    for (
-                                                                        w11
-                                                                    ) in split_with_sep(
-                                                                        w10, "=",
-                                                                    ):
-                                                                        for (
-                                                                            w12
-                                                                        ) in split_with_sep(
-                                                                            w11, "<",
-                                                                        ):
-                                                                            for (
-                                                                                w13
-                                                                            ) in split_with_sep(
-                                                                                w12,
-                                                                                ">",
-                                                                            ):
-                                                                                yield w13.lower()
+            yield from split_tokens(elem)
+
+
+def _split_on_whitespace_token(token: str, value: str):
+    for elem in value.split(token):
+        if elem:
+            yield from split_tokens(elem)
+
+
+def _split_on_kept_token(token: str, value: str):
+    for elem in split_with_sep(value, token):
+        yield from split_tokens(elem)
+
+
+def split_tokens(value: str):
+    for string_token in STRING_SPLIT_TOKENS:
+        if string_token in value:
+            yield from _split_on_string_token(string_token, value)
+            return
+
+    for whitespace_token in WHITESPACE_SPLIT_TOKENS:
+        if whitespace_token in value:
+            yield from _split_on_whitespace_token(whitespace_token, value)
+            return
+
+    for kept_token in KEPT_SPLIT_TOKENS:
+        if kept_token in value and value != kept_token:
+            yield from _split_on_kept_token(kept_token, value)
+            return
+
+    yield value.lower()
 
 
 def to_tokens(value: str):
     tokens = split_tokens(value)
-    for s in merge_stream(tokens, ["<>", "<=", ">="]):
-        yield s
+    yield from merge_stream(tokens, MERGE_TOKENS)

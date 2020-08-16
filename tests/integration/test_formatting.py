@@ -671,7 +671,7 @@ FROM t;
     assert format_sql(sql) == expected.strip()
 
 
-def test_partitioning_function():
+def test_partitioning_function_order_by():
     sql = "SELECT *, row_number() over (partition by x order BY x) from t;"
     expected = """
 SELECT
@@ -686,7 +686,7 @@ FROM t;
 
 
 def test_partitioning_function_order_by_multiple():
-    sql = "SELECT row_number() over (partition by x,z, x+z order by x desc, z ASC)  from t;"
+    sql = "SELECT row_number() over (partition by x,z, x+z order by x desc, z ASC)  from t;"  # NOQA
     expected = """
 SELECT ROW_NUMBER() OVER (
  PARTITION BY
@@ -725,9 +725,9 @@ FROM t;
 
 
 def test_long_function():
-    sql = "select (IFNULL(SUM(f1), 0) + (APPROX_COUNT_DISTINCT(IF(f2 >= DATE('2018-04-10'), f3, NULL)) - IFNULL(SUM(f4), 0)) + 50) f_1 from t;"
+    sql = "select (IFNULL(SUM(f1), 0) + (APPROX_COUNT_DISTINCT(IF(f2 >= DATE('2018-04-10'), f3, NULL)) - IFNULL(SUM(f4), 0)) + 50) f_1 from t;"  # NOQA
     expected = """
 SELECT (IFNULL(SUM(f1), 0) + (APPROX_COUNT_DISTINCT(IF(f2 >= DATE('2018-04-10'), f3, NULL)) - IFNULL(SUM(f4), 0)) + 50) f_1
 FROM t;
-"""
+"""  # NOQA
     assert format_sql(sql) == expected.strip()
