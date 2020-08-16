@@ -411,7 +411,7 @@ class FunctionCall(Expression):
 
     def __str__(self):
         return "{}({})".format(
-            self.function_name.upper(), ", ".join(map(str, self.args))
+            self.function_name.upper(), ", ".join(map(transform, self.args))
         )
 
     def __repr__(self):
@@ -468,6 +468,13 @@ class Column(Expression):
         if self.value not in known_fields and "*" not in known_fields:
             errors.append("The column {} was not found".format(self.value))
         return errors
+
+
+class Type(Expression):
+    VALUES = ("int", "float", "day", "month", "timestamp")
+
+    def __str__(self):
+        return self.value.upper()
 
 
 class String(Expression):
@@ -583,10 +590,12 @@ class Alias(Expression):
 
     def transform(self, expression=None):
         expression = expression or self.expression
-        return "{}{}{}".format(expression, " AS " if self.with_as else " ", self.alias,)
+        return "{}{}{}".format(
+            expression, " AS " if self.with_as else " ", transform(self.alias)
+        )
 
     def __repr__(self):
-        return "<Alias: {!r} as={} {}>".format(
+        return "<Alias: {!r} as={} {!r}>".format(
             self.expression, self.with_as, self.alias
         )
 

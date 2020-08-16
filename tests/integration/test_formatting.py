@@ -731,3 +731,12 @@ SELECT (IFNULL(SUM(f1), 0) + (APPROX_COUNT_DISTINCT(IF(f2 >= DATE('2018-04-10'),
 FROM t;
 """  # NOQA
     assert format_sql(sql) == expected.strip()
+
+
+def test_date_functions_field():
+    sql = "select DATE(TIMESTAMP_TRUNC(CAST(sq_2.date AS TIMESTAMP), MONTH)) from table as sq_2"  # NOQA
+    expected = """
+SELECT DATE(TIMESTAMP_TRUNC(CAST(sq_2.date AS TIMESTAMP), MONTH))
+FROM table AS sq_2
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()

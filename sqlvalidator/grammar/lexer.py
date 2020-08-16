@@ -2,6 +2,7 @@ from sqlvalidator.grammar.sql import (
     SelectStatement,
     FunctionCall,
     Column,
+    Type,
     Alias,
     String,
     Integer,
@@ -332,6 +333,8 @@ class ExpressionParser:
             expression = Boolean(main_token)
         elif main_token in Null.VALUES:
             expression = Null()
+        elif main_token in Type.VALUES:
+            expression = Type(main_token)
         elif main_token == "(":
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             arguments = ExpressionListParser.parse(iter(argument_tokens))
@@ -453,7 +456,7 @@ class ExpressionParser:
         ):
             if next_token == "as":
                 with_as = True
-                alias = next(tokens)
+                alias, _ = ExpressionParser.parse(tokens, is_right_hand=True)
             else:
                 with_as = False
                 alias = next_token

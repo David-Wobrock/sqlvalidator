@@ -8,6 +8,7 @@ from sqlvalidator.grammar.sql import (
     FunctionCall,
     Column,
     Alias,
+    Type,
     String,
     Integer,
     Parenthesis,
@@ -49,6 +50,23 @@ def test_nested_functions():
     assert actual == expected
 
 
+def test_nested_date_functions():
+    actual = ExpressionParser.parse(
+        to_tokens("DATE(TIMESTAMP_TRUNC(CAST(a.date AS TIMESTAMP), MONTH))")
+    )
+    expected = FunctionCall(
+        "date",
+        FunctionCall(
+            "timestamp_trunc",
+            FunctionCall(
+                "cast", Alias(Column("a.date"), alias=Type("timestamp"), with_as=True)
+            ),
+            Type("month"),
+        ),
+    )
+    assert actual == expected
+
+
 def test_string_value():
     actual = ExpressionParser.parse(to_tokens("'VAL'"))
     expected = String("VAL", quotes="'")
@@ -69,7 +87,7 @@ def test_string_value_back_quotes():
 
 def test_aliased_column():
     actual = ExpressionParser.parse(to_tokens("col AS column_name"))
-    expected = Alias(Column("col"), alias="column_name", with_as=True)
+    expected = Alias(Column("col"), alias=Column("column_name"), with_as=True)
     assert actual == expected
 
 
