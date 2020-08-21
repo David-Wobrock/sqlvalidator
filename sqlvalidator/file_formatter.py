@@ -8,20 +8,67 @@ from . import sql_formatter
 
 SQLFORMAT_COMMENT = "sqlformat"
 
+POSSIBLE_QUOTES = ('"""', "'''", '"', "'")
+STRING_PREFIXES = (
+    "r",
+    "u",
+    "ur",
+    "R",
+    "U",
+    "UR",
+    "Ur",
+    "uR",
+    "f",
+    "F",
+    "fr",
+    "Fr",
+    "fR",
+    "FR",
+    "rf",
+    "rF",
+    "Rf",
+    "RF",
+    "b",
+    "B",
+    "br",
+    "Br",
+    "bR",
+    "BR",
+    "rb",
+    "rB",
+    "Rb",
+    "RB",
+)
+
 
 def format_sql_string(sql_string):
     quotes = None
-    possible_quotes = ('"""', "'''", '"', "'")
-    for possible_quote in possible_quotes:
+    quotes_prefix = None
+
+    for possible_quote in POSSIBLE_QUOTES:
         if sql_string.startswith(possible_quote) and sql_string.endswith(
             possible_quote
         ):
             quotes = possible_quote
             break
 
+    if quotes is None:
+        for possible_quote in POSSIBLE_QUOTES:
+            for prefix in STRING_PREFIXES:
+                if sql_string.startswith(
+                    prefix + possible_quote
+                ) and sql_string.endswith(possible_quote):
+                    quotes = possible_quote
+                    quotes_prefix = prefix
+                    break
+            if quotes_prefix is not None:
+                break
+
     assert quotes is not None, "Could not find quotes"
 
-    sql_string_without_quotes = sql_string.strip(quotes)
+    if quotes_prefix is not None:
+        sql_string = sql_string[len(quotes_prefix) :]
+    sql_string_without_quotes = sql_string[len(quotes) : -len(quotes)]
     formatted_sql = sql_formatter.format_sql(sql_string_without_quotes)
 
     if len(quotes) == 1 and "\n" in formatted_sql:
@@ -34,12 +81,12 @@ def format_sql_string(sql_string):
         new_quotes = quotes
 
     if len(new_quotes) == 3 and "\n" in formatted_sql:
-        quoted_sql = "{quotes}\n{sql}\n{quotes}".format(
-            quotes=new_quotes, sql=formatted_sql
+        quoted_sql = "{prefix}{quotes}\n{sql}\n{quotes}".format(
+            prefix=quotes_prefix or "", quotes=new_quotes, sql=formatted_sql
         )
     else:
-        quoted_sql = "{quotes}{sql}{quotes}".format(
-            quotes=new_quotes, sql=formatted_sql
+        quoted_sql = "{prefix}{quotes}{sql}{quotes}".format(
+            prefix=quotes_prefix or "", quotes=new_quotes, sql=formatted_sql
         )
     return quoted_sql
 
