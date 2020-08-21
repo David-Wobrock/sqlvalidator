@@ -793,3 +793,74 @@ SELECT DATE(TIMESTAMP_TRUNC(CAST(sq_2.date AS TIMESTAMP), MONTH))
 FROM table AS sq_2
 """  # NOQA
     assert format_sql(sql) == expected.strip()
+
+
+def test_case_expr():
+    sql = (
+        "select case c when 1 THEN 'test' when 1+3 then 'other' else 'none' end from t;"
+    )
+    expected = """
+SELECT CASE c
+ WHEN 1 THEN 'test'
+ WHEN 1 + 3 THEN 'other'
+ ELSE 'none'
+END
+FROM t;
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()
+
+
+def test_case_expr_multiple_fields():
+    sql = "select col, col2, case c when 1 THEN 'test' when 1+3 then 'other' else 'none' end from t;"  # noqa
+    expected = """
+SELECT
+ col,
+ col2,
+ CASE c
+  WHEN 1 THEN 'test'
+  WHEN 1 + 3 THEN 'other'
+  ELSE 'none'
+ END
+FROM t;
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()
+
+
+def test_case():
+    sql = "select case when c = 1 THEN 'test' when c <= 1+3 then 'other' else 'none' end from t;"  # noqa
+    expected = """
+SELECT CASE
+ WHEN c = 1 THEN 'test'
+ WHEN c <= 1 + 3 THEN 'other'
+ ELSE 'none'
+END
+FROM t;
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()
+
+
+def test_case_multiple_fields():
+    sql = "select col, case when c = 1 THEN 'test' when c <= 1+3 then 'other' else 'none' end from t;"  # noqa
+    expected = """
+SELECT
+ col,
+ CASE
+  WHEN c = 1 THEN 'test'
+  WHEN c <= 1 + 3 THEN 'other'
+  ELSE 'none'
+ END
+FROM t;
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()
+
+
+def test_case_no_else():
+    sql = "select case when c = 1 THEN 'test' when c <= 1+3 then 'other' end from t;"
+    expected = """
+SELECT CASE
+ WHEN c = 1 THEN 'test'
+ WHEN c <= 1 + 3 THEN 'other'
+END
+FROM t;
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()

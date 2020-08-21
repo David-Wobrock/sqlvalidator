@@ -799,3 +799,26 @@ class ExceptClause(Expression):
         elif except_str:
             except_str += transform(self.args[0])
         return except_str + ")"
+
+
+class Case(Expression):
+    def __init__(self, expression, when_then, else_expression):
+        super().__init__(expression)
+        self.when_then = when_then
+        self.else_expression = else_expression
+
+    def __str__(self):
+        case_str = "CASE"
+        if self.value:
+            case_str += " {}".format(transform(self.value))
+
+        case_str += "\n "
+        case_str += "\n ".join(
+            "WHEN {} THEN {}".format(transform(when), transform(then))
+            for when, then in self.when_then
+        )
+
+        if self.else_expression:
+            case_str += "\n ELSE {}".format(transform(self.else_expression))
+        case_str += "\nEND"
+        return case_str

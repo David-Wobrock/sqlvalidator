@@ -26,6 +26,7 @@ from sqlvalidator.grammar.sql import (
     ExceptClause,
     AnalyticsClause,
     WindowFrameClause,
+    Case,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -325,6 +326,7 @@ class ExpressionParser:
     @staticmethod
     def parse(tokens, is_right_hand=False):
         main_token = next(tokens)
+        next_token = None
 
         if main_token == "'" or main_token == '"' or main_token == "`":
             expression = StringParser.parse(tokens, main_token)
@@ -340,10 +342,16 @@ class ExpressionParser:
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             arguments = ExpressionListParser.parse(iter(argument_tokens))
             expression = Parenthesis(*arguments)
+        elif main_token == "case":
+            argument_tokens, next_token = get_tokens_until_one_of(tokens, ["end"])
+            assert next_token == "end"
+            next_token = next(tokens, None)
+            expression = CaseParser.parse(iter(argument_tokens))
         else:
             expression = None
 
-        next_token = next(tokens, None)
+        if next_token is None:
+            next_token = next(tokens, None)
 
         # Expressions that need the next_token to be read
         if expression is None:
@@ -483,3 +491,33 @@ class StringParser:
         if start_quote != end_quote:
             raise ValueError("Did not find ending quote {}".format(start_quote))
         return string_expression
+
+
+class CaseParser:
+    @staticmethod
+    def parse(tokens):
+        next_token = next(tokens)
+        if next_token == "when":
+            expression = None
+        else:
+            expressions_tokens, next_token = get_tokens_until_one_of(
+                tokens, ["when"], first_token=next_token
+            )
+            expression = ExpressionParser.parse(iter(expressions_tokens))
+
+        when_then = []
+        else_expression = None
+        while next_token:
+            if next_token == "when":
+                expressions_tokens, _ = get_tokens_until_one_of(tokens, ["then"])
+                when_expression = ExpressionParser.parse(iter(expressions_tokens))
+                expressions_tokens, next_token = get_tokens_until_one_of(
+                    tokens, ["when", "else"]
+                )
+                then_expression = ExpressionParser.parse(iter(expressions_tokens))
+                when_then.append((when_expression, then_expression))
+            elif next_token == "else":
+                expressions_tokens, next_token = get_tokens_until_one_of(tokens, [])
+                else_expression = ExpressionParser.parse(iter(expressions_tokens))
+
+        return Case(expression, when_then, else_expression)
