@@ -671,6 +671,21 @@ FROM t;
     assert format_sql(sql) == expected.strip()
 
 
+def test_partitioning_function_multiple_params_with_frame():
+    sql = "SELECT row_number() over (partition by x,z, x+z rows BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) from t;"  # noqa
+    expected = """
+SELECT ROW_NUMBER() OVER (
+ PARTITION BY
+  x,
+  z,
+  x + z
+ ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()
+
+
 def test_partitioning_function_order_by():
     sql = "SELECT *, row_number() over (partition by x order BY x) from t;"
     expected = """
@@ -679,6 +694,21 @@ SELECT
  ROW_NUMBER() OVER (
   PARTITION BY x
   ORDER BY x
+ )
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_partitioning_function_order_by_frame():
+    sql = "SELECT *, row_number() over (partition by x order BY x rows BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) from t;"  # noqa
+    expected = """
+SELECT
+ *,
+ ROW_NUMBER() OVER (
+  PARTITION BY x
+  ORDER BY x
+  ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
  )
 FROM t;
     """
@@ -710,6 +740,29 @@ SELECT ROW_NUMBER() OVER (
   x DESC,
   z ASC
 )
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_partitioning_function_order_by_no_partition_with_frame():
+    sql = "SELECT row_number() over (order by x desc, z ASC RANGE between UNBOUNDED preceding AND unbounded FOLLOWING)  from t;"  # noqa
+    expected = """
+SELECT ROW_NUMBER() OVER (
+ ORDER BY
+  x DESC,
+  z ASC
+ RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)
+FROM t;
+    """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_partitioning_function_no_order_with_frame():
+    sql = "SELECT row_number() over (RANGE between UNBOUNDED preceding AND unbounded FOLLOWING)  from t;"  # noqa
+    expected = """
+SELECT ROW_NUMBER() OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
 FROM t;
     """
     assert format_sql(sql) == expected.strip()

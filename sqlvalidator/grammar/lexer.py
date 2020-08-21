@@ -25,6 +25,7 @@ from sqlvalidator.grammar.sql import (
     UsingClause,
     ExceptClause,
     AnalyticsClause,
+    WindowFrameClause,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -412,7 +413,7 @@ class ExpressionParser:
                 if not argument_next_token or argument_next_token != "by":
                     raise ParsingError("Missing BY after PARTITION")
                 expression_tokens, argument_next_token = get_tokens_until_one_of(
-                    argument_tokens, ["order"]  # todo frame
+                    argument_tokens, ["order", "rows", "range"]
                 )
                 partition_by = ExpressionListParser.parse(iter(expression_tokens))
             else:
@@ -423,17 +424,26 @@ class ExpressionParser:
                 if not argument_next_token or argument_next_token != "by":
                     raise ParsingError("Missing BY after ORDER")
                 expression_tokens, argument_next_token = get_tokens_until_one_of(
-                    argument_tokens, []  # todo frame
+                    argument_tokens, ["rows", "range"]
                 )
                 order_by = OrderByParser.parse(iter(expression_tokens))
             else:
                 order_by = None
 
+            if argument_next_token in ("rows", "range"):
+                rows_range = argument_next_token
+                expression_tokens, _ = get_tokens_until_one_of(argument_tokens, [])
+                frame_clause = WindowFrameClause(
+                    rows_range, " ".join(expression_tokens)
+                )
+            else:
+                frame_clause = None
+
             expression = AnalyticsClause(
                 expression,
                 partition_by=partition_by,
                 order_by=order_by,
-                frame_clause=None,  # TODO
+                frame_clause=frame_clause,
             )
             next_token = next(tokens, None)
 

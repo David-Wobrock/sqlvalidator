@@ -449,10 +449,22 @@ class AnalyticsClause(Expression):
             analytics_str += "\n ORDER BY{}".format(
                 transform(self.order_by).replace("\n", "\n ")
             )
-        # TODO: frame_clause
+        if self.frame_clause:
+            if "\n" in analytics_str:
+                analytics_str += "\n "
+            analytics_str += transform(self.frame_clause)
 
         analytics_str += "\n)" if "\n" in analytics_str else ")"
         return analytics_str
+
+
+class WindowFrameClause(Expression):
+    def __init__(self, rows_range, frame):
+        self.rows_range = rows_range
+        self.frame = frame
+
+    def __str__(self):
+        return "{} {}".format(self.rows_range.upper(), self.frame.upper())
 
 
 class Column(Expression):
