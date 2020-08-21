@@ -768,6 +768,15 @@ FROM t;
     assert format_sql(sql) == expected.strip()
 
 
+def test_partitioning_function_equals_with_alias():
+    sql = "SELECT row_number() over (RANGE between UNBOUNDED preceding AND unbounded FOLLOWING) = 1 test from t;"  # noqa
+    expected = """
+SELECT ROW_NUMBER() OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) = 1 test
+FROM t;
+    """  # noqa
+    assert format_sql(sql) == expected.strip()
+
+
 def test_partitioning_function_empty():
     sql = "SELECT row_number() over () from t;"
     expected = """

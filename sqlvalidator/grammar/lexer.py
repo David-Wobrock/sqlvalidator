@@ -366,49 +366,6 @@ class ExpressionParser:
             else:
                 expression = Column(main_token)
 
-        if next_token and next_token in ("+", "-", "*", "/"):
-            left_hand = expression
-            symbol = next_token
-            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
-            expression = ArithmaticOperator(symbol, left_hand, right_hand)
-
-        if is_right_hand:
-            return expression, next_token
-
-        if next_token in Condition.PREDICATES:
-            symbol = next_token
-            if next_token == "is":
-                next_next_token = next(tokens)
-                if next_next_token == "not":
-                    symbol = "is not"
-                else:
-                    tokens, _ = get_tokens_until_one_of(
-                        tokens, [], first_token=next_next_token
-                    )
-                    tokens = iter(tokens)
-
-            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
-            expression = Condition(expression, symbol, right_hand)
-        elif next_token == "between":
-            symbol = next_token
-            right_hand_left, next_token = ExpressionParser.parse(
-                tokens, is_right_hand=True
-            )
-            if next_token != "and":
-                raise ParsingError("expected AND")
-            right_hand_right, next_token = ExpressionParser.parse(
-                tokens, is_right_hand=True
-            )
-            right_hand = BooleanCondition("and", right_hand_left, right_hand_right,)
-            expression = Condition(expression, symbol, right_hand)
-
-        if next_token in BooleanCondition.PREDICATES:
-            left_hand = expression
-            symbol = next_token
-            right_hand = ExpressionParser.parse(tokens)
-            expression = BooleanCondition(symbol, left_hand, right_hand)
-            next_token = next(tokens, None)
-
         if next_token == "over":
             opening_parenthesis = next(tokens, None)
             if opening_parenthesis != "(":
@@ -453,6 +410,49 @@ class ExpressionParser:
                 order_by=order_by,
                 frame_clause=frame_clause,
             )
+            next_token = next(tokens, None)
+
+        if next_token and next_token in ("+", "-", "*", "/"):
+            left_hand = expression
+            symbol = next_token
+            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            expression = ArithmaticOperator(symbol, left_hand, right_hand)
+
+        if is_right_hand:
+            return expression, next_token
+
+        if next_token in Condition.PREDICATES:
+            symbol = next_token
+            if next_token == "is":
+                next_next_token = next(tokens)
+                if next_next_token == "not":
+                    symbol = "is not"
+                else:
+                    tokens, _ = get_tokens_until_one_of(
+                        tokens, [], first_token=next_next_token
+                    )
+                    tokens = iter(tokens)
+
+            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            expression = Condition(expression, symbol, right_hand)
+        elif next_token == "between":
+            symbol = next_token
+            right_hand_left, next_token = ExpressionParser.parse(
+                tokens, is_right_hand=True
+            )
+            if next_token != "and":
+                raise ParsingError("expected AND")
+            right_hand_right, next_token = ExpressionParser.parse(
+                tokens, is_right_hand=True
+            )
+            right_hand = BooleanCondition("and", right_hand_left, right_hand_right,)
+            expression = Condition(expression, symbol, right_hand)
+
+        if next_token in BooleanCondition.PREDICATES:
+            left_hand = expression
+            symbol = next_token
+            right_hand = ExpressionParser.parse(tokens)
+            expression = BooleanCondition(symbol, left_hand, right_hand)
             next_token = next(tokens, None)
 
         if next_token == "except":
