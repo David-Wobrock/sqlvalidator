@@ -662,7 +662,7 @@ class Table(Expression):
 
 
 class Join(Expression):
-    VALUES = ("join", "inner", "left", "right", "full", "cross")
+    VALUES = ("join", "inner", "left", "right", "full", "cross", "outer")
 
     def __init__(self, join_type, left_from, right_from, on, using):
         self.join_type = join_type

@@ -183,7 +183,7 @@ class FromStatementParser:
             expression = Alias(expression, alias, with_as)
             next_token = next(tokens, None)
 
-        if next_token in Join.VALUES:
+        while next_token in Join.VALUES:
             left_expr = expression
             expression_tokens, next_token = get_tokens_until_not_in(
                 tokens, Join.VALUES, first_token=next_token
@@ -193,12 +193,17 @@ class FromStatementParser:
                 tokens, ("on", "using"), first_token=next_token
             )
             right_expr = FromStatementParser.parse(iter(expression_tokens))
-            on = using = None
-            if next_token == "on":
-                expression = ExpressionParser.parse(tokens)
+            on = None
+            using = None
+            on_or_using = next_token
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens, Join.VALUES,
+            )
+            if on_or_using == "on":
+                expression = ExpressionParser.parse(iter(expression_tokens))
                 on = OnClause(expression)
-            elif next_token == "using":
-                expressions = ExpressionParser.parse(tokens)
+            elif on_or_using == "using":
+                expressions = ExpressionParser.parse(iter(expression_tokens))
                 using = UsingClause(expressions)
 
             expression = Join(join_type, left_expr, right_expr, on=on, using=using)
@@ -210,7 +215,7 @@ class JoinTypeParser:
     @staticmethod
     def parse(tokens):
         # TODO: assert known join types
-        return "".join(tokens).upper()
+        return " ".join(tokens).upper()
 
 
 class WhereClauseParser:

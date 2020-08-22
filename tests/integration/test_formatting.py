@@ -626,6 +626,32 @@ USING (field)
     assert format_sql(sql) == expected.strip()
 
 
+def test_two_parenthesis_joins_with_group_by():
+    sql = """
+SELECT avg(col), count(*)
+FROM table JOIN (other_table) USING (field) FULL OUTER JOIN ( SELECT * FROM last_table WHERE x = 1 ) USING (f2)
+GROUP BY field
+"""  # noqa
+    expected = """
+SELECT
+ AVG(col),
+ COUNT(*)
+FROM table
+JOIN (
+ other_table
+)
+USING (field)
+FULL OUTER JOIN (
+ SELECT *
+ FROM last_table
+ WHERE x = 1
+)
+USING (f2)
+GROUP BY field
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_parenthesis_join_subquery():
     sql = """
 SELECT field
