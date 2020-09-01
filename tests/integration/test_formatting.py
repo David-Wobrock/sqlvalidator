@@ -603,8 +603,7 @@ FROM table JOIN other_table USING (field)
     expected = """
 SELECT field
 FROM table
-JOIN
- other_table
+JOIN other_table
 USING (field)
 """
     assert format_sql(sql) == expected.strip()
@@ -648,6 +647,113 @@ FULL OUTER JOIN (
 )
 USING (f2)
 GROUP BY field
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_nested_joins():
+    sql = """
+SELECT COALESCE(sq_1.col, sq_2.col) f0_
+
+FROM (SELECT ANY_VALUE(col) col,
+LAST_VALUE(ANY_VALUE(col2)) OVER (PARTITION BY ANY_VALUE(col) ORDER BY SUM(clicks) ASC, SUM(metric) ASC RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) last,
+hash
+FROM (SELECT *
+FROM `events`
+WHERE _TABLE_SUFFIX BETWEEN '20200410' AND '20200510')
+JOIN
+(SELECT * EXCEPT (hash)
+FROM (SELECT *,
+ROW_NUMBER() OVER (PARTITION BY hash) AS rn
+FROM `test-table`
+WHERE _TABLE_SUFFIX BETWEEN '20200401' AND '20200501')
+WHERE rn = 1)
+USING (hash)
+GROUP BY hash) sq_1
+
+FULL OUTER JOIN
+
+(SELECT ANY_VALUE(col) col,
+hash
+FROM (SELECT *
+FROM `events`
+WHERE _TABLE_SUFFIX BETWEEN '20200310' AND '20200410')
+JOIN
+(SELECT * EXCEPT (hash),
+FROM (SELECT *,
+ROW_NUMBER() OVER (PARTITION BY hash) AS rn
+FROM `test-table`
+WHERE _TABLE_SUFFIX BETWEEN '20200301' AND '20200401')
+WHERE rn = 1)
+USING (hash)
+GROUP BY hash) sq_2
+
+ON sq_1.hash = sq_2.hash
+WHERE sq_1.last = 1
+GROUP BY f0_
+"""  # noqa
+    expected = """
+SELECT COALESCE(sq_1.col, sq_2.col) f0_
+FROM (
+ SELECT
+  ANY_VALUE(col) col,
+  LAST_VALUE(ANY_VALUE(col2)) OVER (
+   PARTITION BY ANY_VALUE(col)
+   ORDER BY
+    SUM(clicks) ASC,
+    SUM(metric) ASC
+   RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+  ) last,
+  hash
+ FROM (
+  SELECT *
+  FROM `events`
+  WHERE _TABLE_SUFFIX BETWEEN '20200410' AND '20200510'
+ )
+ JOIN (
+  SELECT * EXCEPT (hash)
+  FROM (
+   SELECT
+    *,
+    ROW_NUMBER() OVER (
+     PARTITION BY hash
+    ) AS rn
+   FROM `test-table`
+   WHERE _TABLE_SUFFIX BETWEEN '20200401' AND '20200501'
+  )
+  WHERE rn = 1
+ )
+ USING (hash)
+ GROUP BY hash
+) sq_1
+FULL OUTER JOIN (
+ SELECT
+  ANY_VALUE(col) col,
+  hash
+ FROM (
+  SELECT *
+  FROM `events`
+  WHERE _TABLE_SUFFIX BETWEEN '20200310' AND '20200410'
+ )
+ JOIN (
+  SELECT * EXCEPT (hash)
+  FROM (
+   SELECT
+    *,
+    ROW_NUMBER() OVER (
+     PARTITION BY hash
+    ) AS rn
+   FROM `test-table`
+   WHERE _TABLE_SUFFIX BETWEEN '20200301' AND '20200401'
+  )
+  WHERE rn = 1
+ )
+ USING (hash)
+ GROUP BY hash
+) sq_2
+ON sq_1.hash = sq_2.hash
+WHERE sq_1.last = 1
+GROUP BY f0_
 """
     assert format_sql(sql) == expected.strip()
 

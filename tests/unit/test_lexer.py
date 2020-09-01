@@ -22,6 +22,12 @@ from sqlvalidator.grammar.sql import (
     OrderByItem,
     GroupByClause,
     LimitClause,
+    Join,
+    ExceptClause,
+    AnalyticsClause,
+    WindowFrameClause,
+    UsingClause,
+    OnClause,
 )
 from sqlvalidator.grammar.tokeniser import to_tokens
 
@@ -293,13 +299,17 @@ def test_consecutive_parenthesis():
 
 def test_select_all():
     actual = SQLStatementParser.parse(to_tokens("SELECT ALL 1"))
-    expected = SelectStatement(select_all=True, expressions=[Integer(1)])
+    expected = SelectStatement(
+        select_all=True, expressions=[Integer(1)], semi_colon=False
+    )
     assert actual == expected
 
 
 def test_select_distinct():
     actual = SQLStatementParser.parse(to_tokens("SELECT DISTINCT 1"))
-    expected = SelectStatement(select_distinct=True, expressions=[Integer(1)])
+    expected = SelectStatement(
+        select_distinct=True, expressions=[Integer(1)], semi_colon=False
+    )
     assert actual == expected
 
 
@@ -309,6 +319,7 @@ def test_select_distinct_on():
         select_distinct=True,
         select_distinct_on=[Column("col")],
         expressions=[Column("col")],
+        semi_colon=False,
     )
     assert actual == expected
 
@@ -316,7 +327,9 @@ def test_select_distinct_on():
 def test_group_by_without_from():
     actual = SQLStatementParser.parse(to_tokens("SELECT 1 GROUP BY 2"))
     expected = SelectStatement(
-        expressions=[Integer(1)], group_by_clause=GroupByClause(Integer(2))
+        expressions=[Integer(1)],
+        group_by_clause=GroupByClause(Integer(2)),
+        semi_colon=False,
     )
     assert actual == expected
 
@@ -329,6 +342,7 @@ def test_order_by_clause():
         order_by_clause=OrderByClause(
             OrderByItem(Column("col")), OrderByItem(Integer(2))
         ),
+        semi_colon=False,
     )
     assert actual == expected
 
@@ -341,6 +355,7 @@ def test_limit_parentheses():
             limit_all=False,
             expression=Parenthesis(Parenthesis(Parenthesis(Integer(3)))),
         ),
+        semi_colon=False,
     )
     assert actual == expected
 
@@ -350,7 +365,7 @@ def test_subquery():
         to_tokens(
             "SELECT col"
             " from (select count(*) col"
-            " from table group by x) WHERE col > 10 ORDER BY col DESC"
+            " from table group by x) WHERE col > 10 ORDER BY col DESC;"
         )
     )
     expected = SelectStatement(
@@ -362,10 +377,12 @@ def test_subquery():
                 ],
                 from_statement=Table("table"),
                 group_by_clause=GroupByClause(Column("x")),
+                semi_colon=False,
             )
         ),
         where_clause=WhereClause(Condition(Column("col"), ">", Integer(10))),
         order_by_clause=OrderByClause(OrderByItem(Column("col"), has_desc=True)),
+        semi_colon=True,
     )
     assert actual == expected
 
@@ -380,5 +397,262 @@ def test_parse_date_function():
     actual = ExpressionParser.parse(to_tokens("col >= DATE('2020-01-01')"))
     expected = Condition(
         Column("col"), ">=", FunctionCall("date", String("2020-01-01", quotes="'"))
+    )
+    assert actual == expected
+
+
+def test_nested_joins():
+    sql = """
+SELECT COALESCE(sq_1.col, sq_2.col) f0_
+
+FROM (SELECT ANY_VALUE(col) col,
+LAST_VALUE(ANY_VALUE(col2)) OVER (PARTITION BY ANY_VALUE(col) ORDER BY SUM(clicks) ASC, SUM(metric) ASC RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) last,
+hash
+FROM (SELECT *
+FROM `events`
+WHERE _TABLE_SUFFIX BETWEEN '20200410' AND '20200510')
+JOIN
+(SELECT * EXCEPT (hash)
+FROM (SELECT *,
+ROW_NUMBER() OVER (PARTITION BY hash) AS rn
+FROM `test-table`
+WHERE _TABLE_SUFFIX BETWEEN '20200401' AND '20200501')
+WHERE rn = 1)
+USING (hash)
+GROUP BY hash) sq_1
+
+FULL OUTER JOIN
+
+(SELECT ANY_VALUE(col) col,
+hash
+FROM (SELECT *
+FROM `events`
+WHERE _TABLE_SUFFIX BETWEEN '20200310' AND '20200410')
+JOIN
+(SELECT * EXCEPT (hash),
+FROM (SELECT *,
+ROW_NUMBER() OVER (PARTITION BY hash) AS rn
+FROM `test-table`
+WHERE _TABLE_SUFFIX BETWEEN '20200301' AND '20200401')
+WHERE rn = 1)
+USING (hash)
+GROUP BY hash) sq_2
+
+ON sq_1.hash = sq_2.hash
+WHERE sq_1.last = 1
+GROUP BY f0_
+"""  # noqa
+    actual = SQLStatementParser.parse(to_tokens(sql))
+    expected = SelectStatement(
+        expressions=[
+            Alias(
+                FunctionCall("coalesce", Column("sq_1.col"), Column("sq_2.col")),
+                "f0_",
+                with_as=False,
+            )
+        ],
+        from_statement=Join(
+            "FULL OUTER JOIN",
+            left_from=Alias(
+                Parenthesis(
+                    SelectStatement(
+                        expressions=[
+                            Alias(
+                                FunctionCall("any_value", Column("col")),
+                                "col",
+                                with_as=False,
+                            ),
+                            Alias(
+                                AnalyticsClause(
+                                    FunctionCall(
+                                        "last_value",
+                                        FunctionCall("any_value", Column("col2")),
+                                    ),
+                                    partition_by=[
+                                        FunctionCall("any_value", Column("col"))
+                                    ],
+                                    order_by=OrderByClause(
+                                        OrderByItem(
+                                            FunctionCall("sum", Column("clicks")),
+                                            has_asc=True,
+                                        ),
+                                        OrderByItem(
+                                            FunctionCall("sum", Column("metric")),
+                                            has_asc=True,
+                                        ),
+                                    ),
+                                    frame_clause=WindowFrameClause(
+                                        "range",
+                                        "between unbounded preceding and unbounded following",  # noqa
+                                    ),
+                                ),
+                                "last",
+                                with_as=False,
+                            ),
+                            Column("hash"),
+                        ],
+                        from_statement=Join(
+                            join_type="JOIN",
+                            left_from=Parenthesis(
+                                SelectStatement(
+                                    expressions=[Column("*")],
+                                    from_statement=Table(String("events", quotes="`")),
+                                    where_clause=WhereClause(
+                                        Condition(
+                                            Column("_table_suffix"),
+                                            "between",
+                                            BooleanCondition(
+                                                "and",
+                                                String("20200410", quotes="'"),
+                                                String("20200510", quotes="'"),
+                                            ),
+                                        )
+                                    ),
+                                    semi_colon=False,
+                                )
+                            ),
+                            right_from=Parenthesis(
+                                SelectStatement(
+                                    expressions=[
+                                        ExceptClause(Column("*"), [Column("hash")])
+                                    ],
+                                    from_statement=Parenthesis(
+                                        SelectStatement(
+                                            expressions=[
+                                                Column("*"),
+                                                Alias(
+                                                    AnalyticsClause(
+                                                        FunctionCall("row_number"),
+                                                        partition_by=[Column("hash")],
+                                                        order_by=None,
+                                                        frame_clause=None,
+                                                    ),
+                                                    Column("rn"),
+                                                    with_as=True,
+                                                ),
+                                            ],
+                                            from_statement=Table(
+                                                String("test-table", quotes="`")
+                                            ),
+                                            where_clause=WhereClause(
+                                                Condition(
+                                                    Column("_table_suffix"),
+                                                    "between",
+                                                    BooleanCondition(
+                                                        "and",
+                                                        String("20200401", quotes="'"),
+                                                        String("20200501", quotes="'"),
+                                                    ),
+                                                )
+                                            ),
+                                            semi_colon=False,
+                                        )
+                                    ),
+                                    where_clause=WhereClause(
+                                        Condition(Column("rn"), "=", Integer(1))
+                                    ),
+                                    semi_colon=False,
+                                )
+                            ),
+                            on=None,
+                            using=UsingClause(Parenthesis(Column("hash"))),
+                        ),
+                        group_by_clause=GroupByClause(Column("hash")),
+                        semi_colon=False,
+                    )
+                ),
+                "sq_1",
+                with_as=False,
+            ),
+            right_from=Alias(
+                Parenthesis(
+                    SelectStatement(
+                        expressions=[
+                            Alias(
+                                FunctionCall("any_value", Column("col")),
+                                "col",
+                                with_as=False,
+                            ),
+                            Column("hash"),
+                        ],
+                        from_statement=Join(
+                            join_type="JOIN",
+                            left_from=Parenthesis(
+                                SelectStatement(
+                                    expressions=[Column("*")],
+                                    from_statement=Table(String("events", quotes="`")),
+                                    where_clause=WhereClause(
+                                        Condition(
+                                            Column("_table_suffix"),
+                                            "between",
+                                            BooleanCondition(
+                                                "and",
+                                                String("20200310", quotes="'"),
+                                                String("20200410", quotes="'"),
+                                            ),
+                                        )
+                                    ),
+                                    semi_colon=False,
+                                )
+                            ),
+                            right_from=Parenthesis(
+                                SelectStatement(
+                                    expressions=[
+                                        ExceptClause(Column("*"), [Column("hash")])
+                                    ],
+                                    from_statement=Parenthesis(
+                                        SelectStatement(
+                                            expressions=[
+                                                Column("*"),
+                                                Alias(
+                                                    AnalyticsClause(
+                                                        FunctionCall("row_number"),
+                                                        partition_by=[Column("hash")],
+                                                        order_by=None,
+                                                        frame_clause=None,
+                                                    ),
+                                                    Column("rn"),
+                                                    with_as=True,
+                                                ),
+                                            ],
+                                            from_statement=Table(
+                                                String("test-table", quotes="`")
+                                            ),
+                                            where_clause=WhereClause(
+                                                Condition(
+                                                    Column("_table_suffix"),
+                                                    "between",
+                                                    BooleanCondition(
+                                                        "and",
+                                                        String("20200301", quotes="'"),
+                                                        String("20200401", quotes="'"),
+                                                    ),
+                                                )
+                                            ),
+                                            semi_colon=False,
+                                        ),
+                                    ),
+                                    where_clause=WhereClause(
+                                        Condition(Column("rn"), "=", Integer(1))
+                                    ),
+                                    semi_colon=False,
+                                )
+                            ),
+                            on=None,
+                            using=UsingClause(Parenthesis(Column("hash"))),
+                        ),
+                        group_by_clause=GroupByClause(Column("hash")),
+                        semi_colon=False,
+                    )
+                ),
+                "sq_2",
+                with_as=False,
+            ),
+            on=OnClause(Condition(Column("sq_1.hash"), "=", Column("sq_2.hash"))),
+            using=None,
+        ),
+        where_clause=WhereClause(Condition(Column("sq_1.last"), "=", Integer(1))),
+        group_by_clause=GroupByClause(Column("f0_")),
+        semi_colon=False,
     )
     assert actual == expected

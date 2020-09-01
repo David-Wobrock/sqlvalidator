@@ -205,8 +205,20 @@ class FromStatementParser:
             elif on_or_using == "using":
                 expressions = ExpressionParser.parse(iter(expression_tokens))
                 using = UsingClause(expressions)
+            else:
+                raise ParsingError("Missing ON or USING for join")
 
             expression = Join(join_type, left_expr, right_expr, on=on, using=using)
+
+            if next_token is not None and next_token not in Join.VALUES:
+                if next_token == "as":
+                    with_as = True
+                    alias = next(tokens)
+                else:
+                    with_as = False
+                    alias = next_token
+                expression = Alias(expression, alias, with_as)
+                next_token = next(tokens, None)
 
         return expression
 

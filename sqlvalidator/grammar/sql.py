@@ -62,16 +62,17 @@ class SelectStatement:
         if self.from_statement:
             if isinstance(self.from_statement, Alias):
                 alias = self.from_statement
-                self.from_statement = self.from_statement.expression
+                from_statement = self.from_statement.expression
             else:
                 alias = None
+                from_statement = self.from_statement
 
-            if isinstance(self.from_statement, Parenthesis):
+            if isinstance(from_statement, Parenthesis):
                 from_str = "(\n{}\n)".format(
-                    self.from_statement.args[0].transform(is_subquery=True)
+                    from_statement.args[0].transform(is_subquery=True)
                 )
             else:
-                from_str = str(self.from_statement)
+                from_str = transform(from_statement)
 
             if alias:
                 from_str = alias.transform(from_str)
@@ -164,6 +165,36 @@ class SelectStatement:
             and self.order_by_clause == other.order_by_clause
             and self.limit_clause == other.limit_clause
             and self.offset_clause == other.offset_clause
+            and self.semi_colon == other.semi_colon
+        )
+
+    def __repr__(self):
+        return """<{}:
+  Expressions: {!r}
+  Select All: {!r} - Select Distinct: {!r} - Select Distinct On: {!r}
+  From: {!r}
+  Where: {!r}
+  Group By: {!r}
+  Having: {!r}
+  Order By: {!r}
+  Limit: {!r}
+  Offset: {!r}
+  Semi Colon: {!r}
+>
+        """.format(
+            self.__class__.__name__,
+            self.expressions,
+            self.select_all,
+            self.select_distinct,
+            self.select_distinct_on,
+            self.from_statement,
+            self.where_clause,
+            self.group_by_clause,
+            self.having_clause,
+            self.order_by_clause,
+            self.limit_clause,
+            self.offset_clause,
+            self.semi_colon,
         )
 
 
@@ -457,6 +488,37 @@ class AnalyticsClause(Expression):
         analytics_str += "\n)" if "\n" in analytics_str else ")"
         return analytics_str
 
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.function == other.function
+            and (
+                (self.partition_by is None and other.partition_by is None)
+                or (
+                    len(self.partition_by) == len(other.partition_by)
+                    and all(
+                        a == o for a, o in zip(self.partition_by, other.partition_by)
+                    )
+                )
+            )
+            and self.order_by == other.order_by
+            and self.frame_clause == other.frame_clause
+        )
+
+    def __repr__(self):
+        return """<{}:
+  Function: {!r}
+  Partition By: {!r}
+  Order By: {!r}
+  Frame Clause: {!r}
+""".format(
+            self.__class__.__name__,
+            self.function,
+            self.partition_by,
+            self.order_by,
+            self.frame_clause,
+        )
+
 
 class WindowFrameClause(Expression):
     def __init__(self, rows_range, frame):
@@ -465,6 +527,21 @@ class WindowFrameClause(Expression):
 
     def __str__(self):
         return "{} {}".format(self.rows_range.upper(), self.frame.upper())
+
+    def __repr__(self):
+        return """<{}:
+  Row Range: {!r}
+  Frame: {!r}
+""".format(
+            self.__class__.__name__, self.rows_range, self.frame,
+        )
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.rows_range == other.rows_range
+            and self.frame == other.frame
+        )
 
 
 class Column(Expression):
@@ -496,6 +573,11 @@ class String(Expression):
 
     def __str__(self):
         return "{quotes}{value}{quotes}".format(quotes=self.quotes, value=self.value)
+
+    def __repr__(self):
+        return "<{}: {!r} quotes={!r}>".format(
+            self.__class__.__name__, self.value, self.quotes
+        )
 
     @property
     def return_type(self):
@@ -674,29 +756,63 @@ class Join(Expression):
     def __str__(self):
         right_from = self.right_from
         num_parenthesis = 0
+
+        alias = None
+        if isinstance(right_from, Alias):
+            alias = right_from
+            right_from = right_from.expression
+
         while isinstance(right_from, Parenthesis):
             right_from = right_from.args[0]
             num_parenthesis += 1
 
-        right_element = "\n" + transform(right_from)
-        right_element = right_element.replace("\n", "\n ")
+        if isinstance(right_from, SelectStatement):
+            right_element = right_from.transform(is_subquery=True)
+        else:
+            right_element = transform(right_from)
+
         if num_parenthesis:
+            right_element = "\n" + right_element
+            if not isinstance(right_from, SelectStatement):
+                right_element = right_element.replace("\n", "\n ")
             right_element = " {}{}\n{}".format(
                 "(" * num_parenthesis, right_element, ")" * num_parenthesis,
             )
+        else:
+            right_element = " " + right_element
+
+        if alias:
+            right_element = "{}{} {}".format(
+                right_element, " AS" if alias.with_as else "", alias.alias
+            )
 
         left_from = self.left_from
+
+        alias = None
+        if isinstance(left_from, Alias):
+            alias = left_from
+            left_from = left_from.expression
+
         num_parenthesis = 0
         while isinstance(left_from, Parenthesis):
             left_from = left_from.args[0]
             num_parenthesis += 1
 
-        left_element = transform(left_from)
+        if isinstance(left_from, SelectStatement):
+            left_element = left_from.transform(is_subquery=True)
+        else:
+            left_element = transform(left_from)
+
         if num_parenthesis:
             left_element = "\n" + left_element
-            left_element = left_element.replace("\n", "\n ")
+            if not isinstance(left_from, SelectStatement):
+                left_element = left_element.replace("\n", "\n ")
             left_element = "{}{}\n{}".format(
                 "(" * num_parenthesis, left_element, ")" * num_parenthesis,
+            )
+        if alias:
+            left_element = "{}{} {}".format(
+                left_element, " AS" if alias.with_as else "", alias.alias
             )
 
         join_str = "{}\n{}{}\n".format(
@@ -707,6 +823,32 @@ class Join(Expression):
         elif self.using:
             join_str += "USING {}".format(transform(self.using))
         return join_str
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.join_type == other.join_type
+            and self.left_from == other.left_from
+            and self.right_from == other.right_from
+            and self.on == other.on
+            and self.using == other.using
+        )
+
+    def __repr__(self):
+        return """<{}:
+  Join Type: {!r}
+  Left part: {!r}
+  Right part: {!r}
+  On: {!r}
+  Using {!r}
+""".format(
+            self.__class__.__name__,
+            self.join_type,
+            self.left_from,
+            self.right_from,
+            self.on,
+            self.using,
+        )
 
 
 class OnClause(Expression):
@@ -791,6 +933,11 @@ class ExceptClause(Expression):
     def __init__(self, expression, args):
         super().__init__(expression)
         self.args = args
+
+    def __repr__(self):
+        return "<{}: {!r} args: {!r}>".format(
+            self.__class__.__name__, self.value, self.args
+        )
 
     def __str__(self):
         except_str = "{} EXCEPT (".format(transform(self.value))

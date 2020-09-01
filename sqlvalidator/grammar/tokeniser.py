@@ -22,7 +22,7 @@ def get_tokens_until_closing_parenthesis(tokens):
 def get_tokens_until_one_of(tokens, stop_words, first_token=None):
     argument_tokens = [first_token] if first_token is not None else []
     next_token = next(tokens, None)
-    count_parenthesis = 0
+    count_parenthesis = 0 if first_token != "(" else 1
     while next_token is not None and not (
         next_token in stop_words and count_parenthesis <= 0
     ):
