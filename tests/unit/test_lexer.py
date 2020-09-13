@@ -28,6 +28,7 @@ from sqlvalidator.grammar.sql import (
     WindowFrameClause,
     UsingClause,
     OnClause,
+    Index,
 )
 from sqlvalidator.grammar.tokeniser import to_tokens
 
@@ -398,6 +399,43 @@ def test_parse_date_function():
     expected = Condition(
         Column("col"), ">=", FunctionCall("date", String("2020-01-01", quotes="'"))
     )
+    assert actual == expected
+
+
+def test_index_access():
+    actual = ExpressionParser.parse(to_tokens("array[0]"))
+    expected = Index(Column("array"), [Integer(0)])
+    assert actual == expected
+
+
+def test_index_access_alias():
+    actual = ExpressionParser.parse(to_tokens("array[0] alias"))
+    expected = Alias(Index(Column("array"), [Integer(0)]), with_as=False, alias="alias")
+    assert actual == expected
+
+
+def test_index_function_access():
+    actual = ExpressionParser.parse(to_tokens("array[index(0)]"))
+    expected = Index(Column("array"), [FunctionCall("index", Integer(0))])
+    assert actual == expected
+
+
+def test_multiple_indices_access():
+    actual = ExpressionParser.parse(to_tokens("array[index(0), 'foo'] alias"))
+    expected = Alias(
+        Index(
+            Column("array"),
+            [FunctionCall("index", Integer(0)), String("foo", quotes="'")],
+        ),
+        with_as=False,
+        alias="alias",
+    )
+    assert actual == expected
+
+
+def test_index_access_right_hand():
+    actual = ExpressionParser.parse(to_tokens("field = array[0]"))
+    expected = Condition(Column("field"), "=", Index(Column("array"), [Integer(0)]),)
     assert actual == expected
 
 

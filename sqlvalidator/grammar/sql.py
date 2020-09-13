@@ -707,6 +707,22 @@ class Alias(Expression):
         return errors
 
 
+class Index(Expression):
+    def __init__(self, expression, indices):
+        super().__init__(expression)
+        self.indices = indices
+
+    def __str__(self):
+        return "{}[{}]".format(
+            transform(self.value), ", ".join(map(transform, self.indices))
+        )
+
+    def __repr__(self):
+        return "<Index: {!r} indices={!r}>".format(
+            self.value, ", ".join(map(repr, self.indices))
+        )
+
+
 class ArithmaticOperator(Expression):
     def __init__(self, operator, *args):
         self.operator = operator

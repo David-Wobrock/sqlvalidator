@@ -1005,3 +1005,14 @@ END
 FROM t;
 """  # NOQA
     assert format_sql(sql) == expected.strip()
+
+
+def test_index_access():
+    sql = "select col[0] f0, col[safe_index(-1)] f1 from table;"
+    expected = """
+SELECT
+ col[0] f0,
+ col[SAFE_INDEX(-1)] f1
+FROM table;
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()

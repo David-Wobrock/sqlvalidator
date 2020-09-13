@@ -67,6 +67,11 @@ def test_lt():
     assert list(to_tokens(value)) == ["x", "<", "3"]
 
 
+def test_index():
+    value = "x[3]"
+    assert list(to_tokens(value)) == ["x", "[", "3", "]"]
+
+
 def test_keep_tokens_in():
     tokens = iter(["foo", "bar", "baz"])
     assert get_tokens_until_not_in(tokens, ["foo", "bar"]) == (["foo", "bar"], "baz")

@@ -1,6 +1,6 @@
 STRING_SPLIT_TOKENS = ("'", '"', "`")
 WHITESPACE_SPLIT_TOKENS = (" ", "\n")
-KEPT_SPLIT_TOKENS = (",", ";", "(", ")", "+", "-", "*", "/", "=", "<", ">")
+KEPT_SPLIT_TOKENS = (",", ";", "(", ")", "[", "]", "+", "-", "*", "/", "=", "<", ">")
 MERGE_TOKENS = ("<>", "<=", ">=")
 
 

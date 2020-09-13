@@ -27,6 +27,7 @@ from sqlvalidator.grammar.sql import (
     AnalyticsClause,
     WindowFrameClause,
     Case,
+    Index,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -376,6 +377,15 @@ class ExpressionParser:
                 argument_tokens = get_tokens_until_closing_parenthesis(tokens)
                 arguments = ExpressionListParser.parse(iter(argument_tokens))
                 expression = FunctionCall(main_token, *arguments)
+                next_token = next(tokens, None)
+            elif next_token is not None and next_token == "[":
+                argument_tokens, next_token = get_tokens_until_one_of(
+                    tokens, stop_words=["]"]
+                )
+                arguments = ExpressionListParser.parse(iter(argument_tokens))
+                expression = Index(
+                    Column(main_token), arguments
+                )  # left item will not always be a column
                 next_token = next(tokens, None)
             elif next_token is not None and main_token == "-" and next_token.isdigit():
                 expression = Integer(-int(next_token))
