@@ -171,7 +171,14 @@ class FromStatementParser:
         elif next_token == "'" or next_token == '"' or next_token == "`":
             expression = Table(StringParser.parse(tokens, next_token))
         else:
-            expression = Table(next_token)
+            if next_token == "unnest":
+                next_next_token = next(tokens)
+                assert next_next_token == "("
+                argument_tokens = get_tokens_until_closing_parenthesis(tokens)
+                arguments = ExpressionListParser.parse(iter(argument_tokens))
+                expression = FunctionCall(next_token, *arguments)
+            else:
+                expression = Table(next_token)
 
         next_token = next(tokens, None)
         if next_token is not None and next_token not in Join.VALUES:
@@ -365,6 +372,10 @@ class ExpressionParser:
             assert next_token == "end"
             next_token = next(tokens, None)
             expression = CaseParser.parse(iter(argument_tokens))
+        elif main_token == "select":
+            argument_tokens, next_token = get_tokens_until_one_of(tokens, [])
+            next_token = next(tokens, None)
+            expression = SelectStatementParser.parse(iter(argument_tokens))
         else:
             expression = None
 

@@ -1016,3 +1016,33 @@ SELECT
 FROM table;
 """  # NOQA
     assert format_sql(sql) == expected.strip()
+
+
+def test_array_with_subquery():
+    sql = "select ARRAY(SELECT struct(dimension, IFNULL(sum(metric),0) ) FROM unnest(f_2) group BY dimension ORDER by dimension) from table"  # noqa
+    expected = """
+SELECT ARRAY(
+ SELECT STRUCT(dimension, IFNULL(SUM(metric), 0))
+ FROM UNNEST(f_2)
+ GROUP BY dimension
+ ORDER BY dimension
+)
+FROM table
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()
+
+
+def test_array_with_subquery_multiple_args():
+    sql = "select ARRAY(SELECT struct(dimension, IFNULL(sum(metric),0) ) FROM unnest(f_2) group BY dimension ORDER by dimension), col from table"  # noqa
+    expected = """
+SELECT
+ ARRAY(
+  SELECT STRUCT(dimension, IFNULL(SUM(metric), 0))
+  FROM UNNEST(f_2)
+  GROUP BY dimension
+  ORDER BY dimension
+ ),
+ col
+FROM table
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()

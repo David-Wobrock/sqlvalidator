@@ -441,9 +441,22 @@ class FunctionCall(Expression):
         self.args = args
 
     def __str__(self):
-        return "{}({})".format(
-            self.function_name.upper(), ", ".join(map(transform, self.args))
-        )
+        transformed_args = [None] * len(self.args)
+        for i, arg in enumerate(self.args):
+            if isinstance(arg, SelectStatement):
+                transformed_args[i] = arg.transform(is_subquery=True)
+            else:
+                transformed_args[i] = transform(arg)
+
+        with_newlines = any(isinstance(arg, SelectStatement) for arg in self.args)
+
+        function_str = self.function_name.upper() + "("
+        if with_newlines:
+            function_str += "\n"
+            function_str += "\n,".join(transformed_args) + "\n)"
+        else:
+            function_str += ", ".join(transformed_args) + ")"
+        return function_str
 
     def __repr__(self):
         return "<FunctionCall {} - {}>".format(
