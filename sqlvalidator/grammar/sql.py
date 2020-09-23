@@ -332,7 +332,9 @@ class OrderByClause(Expression):
         return order_by_str
 
     def __repr__(self):
-        return "<OrderByClause: {}>".format(", ".join(map(repr, self.args)),)
+        return "<OrderByClause: {}>".format(
+            ", ".join(map(repr, self.args)),
+        )
 
     def __eq__(self, other):
         return (
@@ -546,7 +548,9 @@ class WindowFrameClause(Expression):
   Row Range: {!r}
   Frame: {!r}
 """.format(
-            self.__class__.__name__, self.rows_range, self.frame,
+            self.__class__.__name__,
+            self.rows_range,
+            self.frame,
         )
 
     def __eq__(self, other):
@@ -805,7 +809,9 @@ class Join(Expression):
             if not isinstance(right_from, SelectStatement):
                 right_element = right_element.replace("\n", "\n ")
             right_element = " {}{}\n{}".format(
-                "(" * num_parenthesis, right_element, ")" * num_parenthesis,
+                "(" * num_parenthesis,
+                right_element,
+                ")" * num_parenthesis,
             )
         else:
             right_element = " " + right_element
@@ -837,7 +843,9 @@ class Join(Expression):
             if not isinstance(left_from, SelectStatement):
                 left_element = left_element.replace("\n", "\n ")
             left_element = "{}{}\n{}".format(
-                "(" * num_parenthesis, left_element, ")" * num_parenthesis,
+                "(" * num_parenthesis,
+                left_element,
+                ")" * num_parenthesis,
             )
         if alias:
             left_element = "{}{} {}".format(
@@ -845,7 +853,9 @@ class Join(Expression):
             )
 
         join_str = "{}\n{}{}\n".format(
-            left_element, self.join_type.upper(), right_element,
+            left_element,
+            self.join_type.upper(),
+            right_element,
         )
         if self.on:
             join_str += "ON {}".format(transform(self.on))

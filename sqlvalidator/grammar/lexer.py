@@ -205,7 +205,8 @@ class FromStatementParser:
             using = None
             on_or_using = next_token
             expression_tokens, next_token = get_tokens_until_one_of(
-                tokens, Join.VALUES,
+                tokens,
+                Join.VALUES,
             )
             if on_or_using == "on":
                 expression = ExpressionParser.parse(iter(expression_tokens))
@@ -483,7 +484,11 @@ class ExpressionParser:
             right_hand_right, next_token = ExpressionParser.parse(
                 tokens, is_right_hand=True
             )
-            right_hand = BooleanCondition("and", right_hand_left, right_hand_right,)
+            right_hand = BooleanCondition(
+                "and",
+                right_hand_left,
+                right_hand_right,
+            )
             expression = Condition(expression, symbol, right_hand)
 
         if next_token in BooleanCondition.PREDICATES:

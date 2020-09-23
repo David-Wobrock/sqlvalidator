@@ -33,7 +33,11 @@ setup(
     author_email="david.wobrock@gmail.com",
     license="MIT",
     packages=find_packages(exclude=["tests/"]),
-    extras_require={"test": ["pytest==5.4.2",]},
+    extras_require={
+        "test": [
+            "pytest==6.0.2",
+        ]
+    },
     keywords=(
         "python sql format "
         "formatter formatting "

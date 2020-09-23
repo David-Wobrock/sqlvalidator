@@ -196,7 +196,13 @@ def test_between_where_clause():
     actual = WhereClauseParser.parse(to_tokens("col between 3 and 5"))
     expected = WhereClause(
         Condition(
-            Column("col"), "between", BooleanCondition("and", Integer(3), Integer(5),)
+            Column("col"),
+            "between",
+            BooleanCondition(
+                "and",
+                Integer(3),
+                Integer(5),
+            ),
         )
     )
     assert actual == expected
@@ -204,7 +210,9 @@ def test_between_where_clause():
 
 def test_where_different_predicate():
     actual = WhereClauseParser.parse(to_tokens("col <> 3"))
-    expected = WhereClause(Condition(Column("col"), "<>", Integer(3)),)
+    expected = WhereClause(
+        Condition(Column("col"), "<>", Integer(3)),
+    )
     assert actual == expected
 
 
@@ -292,7 +300,11 @@ def test_consecutive_parenthesis():
             Condition(
                 Parenthesis(Addition(Column("col"), Integer(1))), "=", Integer(3)
             ),
-            Condition(Column("col2"), "=", Integer(4),),
+            Condition(
+                Column("col2"),
+                "=",
+                Integer(4),
+            ),
         )
     )
     assert actual == expected
@@ -435,7 +447,11 @@ def test_multiple_indices_access():
 
 def test_index_access_right_hand():
     actual = ExpressionParser.parse(to_tokens("field = array[0]"))
-    expected = Condition(Column("field"), "=", Index(Column("array"), [Integer(0)]),)
+    expected = Condition(
+        Column("field"),
+        "=",
+        Index(Column("array"), [Integer(0)]),
+    )
     assert actual == expected
 
 

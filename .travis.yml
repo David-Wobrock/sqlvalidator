@@ -12,7 +12,7 @@ matrix:
     - name: "Linting and formatting"
       python: 3.6
       install:
-        - pip install pytest==5.4.2 black==19.10b0 mypy==0.770 flake8==3.8.1
+        - pip install pytest==6.0.2 black==20.8b1 mypy==0.782 flake8==3.8.3
       script:
       - |
         set -eo pipefail

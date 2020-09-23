@@ -79,4 +79,7 @@ def test_keep_tokens_in():
 
 def test_keep_tokens_in_parenthesis():
     tokens = iter(["foo", "(", "no", ")", "bar", "baz"])
-    assert get_tokens_until_not_in(tokens, ["foo", "bar"]) == (["foo"], "(",)
+    assert get_tokens_until_not_in(tokens, ["foo", "bar"]) == (
+        ["foo"],
+        "(",
+    )
