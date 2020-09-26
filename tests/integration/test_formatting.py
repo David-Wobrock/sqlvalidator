@@ -1069,9 +1069,18 @@ GROUP BY hash3
 
 
 def test_regex():
-    sql = "select regexp_replace(field, r'[^a-zA-Z0-9]', ' ') from t;"
+    sql = "select regexp_replace(field, r'[^a-zA-Z0-9]', '') from t;"
     expected = """
-SELECT REGEXP_REPLACE(field, r'[^a-zA-Z0-9]', ' ')
+SELECT REGEXP_REPLACE(field, r'[^a-zA-Z0-9]', '')
 FROM t;
 """
+    assert format_sql(sql) == expected.strip()
+
+
+def test_multiple_regexes():
+    sql = r"select REGEXP_REPLACE(regexp_replace(NORMALIZE_AND_CASEFOLD ( arr [SAFE_OFFSET(0)],NFD), r'\p{{Mn}}', ''), r'[^a-zA-Z0-9]', ' ') from t;"  # noqa
+    expected = r"""
+SELECT REGEXP_REPLACE(REGEXP_REPLACE(NORMALIZE_AND_CASEFOLD(arr[SAFE_OFFSET(0)], NFD), r'\p{{Mn}}', ''), r'[^a-zA-Z0-9]', ' ')
+FROM t;
+"""  # NOQA
     assert format_sql(sql) == expected.strip()

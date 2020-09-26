@@ -537,8 +537,13 @@ class StringParser:
     @staticmethod
     def parse(tokens, start_quote, prefix=None):
         string_content = next(tokens, None)
+        if string_content == start_quote:
+            end_quote = string_content
+            string_content = ""
+        else:
+            end_quote = next(tokens)
+
         string_expression = String(string_content, quotes=start_quote, prefix=prefix)
-        end_quote = next(tokens)
         if start_quote != end_quote:
             raise ValueError("Did not find ending quote {}".format(start_quote))
         return string_expression

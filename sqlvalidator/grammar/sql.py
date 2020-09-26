@@ -559,7 +559,7 @@ class WindowFrameClause(Expression):
 
 
 class Column(Expression):
-    KEYWORDS = ("_table_suffix",)
+    KEYWORDS = ("_table_suffix", "nfc", "nfkc", "nfd", "nfkd")
 
     def __str__(self):
         if self.value in self.KEYWORDS:
