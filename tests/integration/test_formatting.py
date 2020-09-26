@@ -1066,3 +1066,12 @@ FROM t
 GROUP BY hash3
 """  # NOQA
     assert format_sql(sql) == expected.strip()
+
+
+def test_regex():
+    sql = "select regexp_replace(field, r'[^a-zA-Z0-9]', ' ') from t;"
+    expected = """
+SELECT REGEXP_REPLACE(field, r'[^a-zA-Z0-9]', ' ')
+FROM t;
+"""
+    assert format_sql(sql) == expected.strip()

@@ -354,7 +354,7 @@ class ExpressionParser:
         main_token = next(tokens)
         next_token = None
 
-        if main_token == "'" or main_token == '"' or main_token == "`":
+        if main_token in String.QUOTES:
             expression = StringParser.parse(tokens, main_token)
         elif main_token.isdigit():
             expression = Integer(main_token)
@@ -402,6 +402,14 @@ class ExpressionParser:
             elif next_token is not None and main_token == "-" and next_token.isdigit():
                 expression = Integer(-int(next_token))
                 next_token = next(tokens, None)
+            elif (
+                main_token in String.PREFIXES
+                and next_token is not None
+                and next_token in String.QUOTES
+            ):
+                expression = StringParser.parse(
+                    tokens, start_quote=next_token, prefix=main_token
+                )
             else:
                 expression = Column(main_token)
 
@@ -527,9 +535,9 @@ class ExpressionParser:
 
 class StringParser:
     @staticmethod
-    def parse(tokens, start_quote):
+    def parse(tokens, start_quote, prefix=None):
         string_content = next(tokens, None)
-        string_expression = String(string_content, quotes=start_quote)
+        string_expression = String(string_content, quotes=start_quote, prefix=prefix)
         end_quote = next(tokens)
         if start_quote != end_quote:
             raise ValueError("Did not find ending quote {}".format(start_quote))

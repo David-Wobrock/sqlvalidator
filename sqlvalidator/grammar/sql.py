@@ -581,16 +581,22 @@ class Type(Expression):
 
 
 class String(Expression):
-    def __init__(self, value, quotes):
+    QUOTES = ("'", '"', "`")
+    PREFIXES = ("r",)
+
+    def __init__(self, value, quotes, prefix=None):
         super().__init__(value)
         self.quotes = quotes
+        self.prefix = prefix
 
     def __str__(self):
-        return "{quotes}{value}{quotes}".format(quotes=self.quotes, value=self.value)
+        return "{prefix}{quotes}{value}{quotes}".format(
+            quotes=self.quotes, value=self.value, prefix=self.prefix or ""
+        )
 
     def __repr__(self):
-        return "<{}: {!r} quotes={!r}>".format(
-            self.__class__.__name__, self.value, self.quotes
+        return "<{}: {!r} quotes={!r} prefix={!r}>".format(
+            self.__class__.__name__, self.value, self.quotes, self.prefix
         )
 
     @property
