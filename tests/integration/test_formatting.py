@@ -1046,3 +1046,23 @@ SELECT
 FROM table
 """  # NOQA
     assert format_sql(sql) == expected.strip()
+
+
+def test_function_calls():
+    sql = "select SAFE_DIVIDE(SUM(SUM(met)) OVER (PARTITION BY ANY_VALUE(hash) ORDER BY SUM(met) DESC, ANY_VALUE(hash2) ASC) ,SUM(SUM(met)) OVER (PARTITION BY ANY_VALUE(hash))) from t group by hash3"  # noqa
+    expected = """
+SELECT SAFE_DIVIDE(
+ SUM(SUM(met)) OVER (
+  PARTITION BY ANY_VALUE(hash)
+  ORDER BY
+   SUM(met) DESC,
+   ANY_VALUE(hash2) ASC
+ ),
+ SUM(SUM(met)) OVER (
+  PARTITION BY ANY_VALUE(hash)
+ )
+)
+FROM t
+GROUP BY hash3
+"""  # NOQA
+    assert format_sql(sql) == expected.strip()
