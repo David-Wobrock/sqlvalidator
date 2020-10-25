@@ -5,11 +5,11 @@
 
 SQL queries formatting, syntactic and semantic validation
 
-Work In Progress!
+**Only supports SELECT statements**
 
 ## Command line usage
 
-For formatting SQL:
+### SQL Formatting
 
 _sql.py_
 ```
@@ -36,35 +36,44 @@ FROM table
 
 ```
 
-The `sqlformat` comment is required to indicated to `sqlvalidator` that this string should be formatted.
+The `sqlformat` comment is required to indicated to `sqlvalidator` that this string is a SQL statement
+and should be formatted.
 
+
+### Check SQL format
 One can verify also that the file would be reformatted or not:
 ```
 $ sqlvalidator --check-format sql.py
 would reformat sql.py (1 changed SQL)
 1 file would be reformatted (1 changed SQL queries).
 
+
 $ sqlvalidator --format sql.py
 reformatted sql.py (1 changed SQL)
 1 file reformatted (1 changed SQL queries).
-```
 
-```
+
 $ sqlvalidator --check-format sql.py
 No file would be reformatted.
+
 
 $ sqlvalidator --format sql.py
 No file reformatted.
 ```
 
 `--check-format` won't write the file back and just return a status code:
-* Status code 0 means nothing would change.
-* Status code 1 means some files would reformatted.
+* Status code 0 when nothing would change.
+* Status code 1 when some files would be reformatted.
 
+The option is meant to be used within the CI/CD pipeline and ensure that SQL statements are formatted.
 
-## API
+### SQL Validation
 
-### Formatting
+TODO, no CLI option has been implemented yet.
+
+## API / Python code usage
+
+### SQL Formatting
 
 ```python
 import sqlvalidator
@@ -72,7 +81,7 @@ import sqlvalidator
 formatted_sql = sqlvalidator.format_sql("SELECT * FROM table")
 ```
 
-### Validation
+### SQL Validation
 
 ```python
 import sqlvalidator
@@ -83,13 +92,11 @@ if not sql_query.is_valid():
     print(sql_query.errors)
 ```
 
-**Warning**: only limited test cases are currently handled by the validation
+**Warning**: only a limited set of validation are implemented.
 
-_Details_:
+## Details about SQL Validation
 
-To be implemented yet, but should become the main added-value of this lib.
-
-Ideally, this package should provide a basic SQL validation:
+Validation contains:
 * not using a missing column
 * existing functions
 * correct aggregations
@@ -98,15 +105,15 @@ Ideally, this package should provide a basic SQL validation:
 
 (only on SELECT-statements)
 
-### Internals
+## Internals
 
-#### Testing
+### Run tests
 
 ```
 pytest
 ```
 
-#### Publishing
+### Publishing
 
 * `python3 setup.py sdist bdist_wheel --universal`
 * `twine upload dist/sqlvalidator-X.Y.Z-py2.py3-none-any.whl dist/sqlvalidator-X.Y.Z.tar.gz`
