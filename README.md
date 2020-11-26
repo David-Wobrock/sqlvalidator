@@ -1,6 +1,6 @@
 # sqlvalidator
 
-[![Travis](https://travis-ci.org/David-Wobrock/sqlvalidator.svg?branch=master)](https://travis-ci.org/David-Wobrock/sqlvalidator)
+[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FDavid-Wobrock%2Fsqlvalidator%2Fbadge%3Fref%3Dmaster&style=popout)](https://actions-badge.atrox.dev/David-Wobrock/sqlvalidator/goto?ref=master)
 [![PyPI](https://img.shields.io/pypi/v/sqlvalidator.svg)](https://pypi.python.org/pypi/sqlvalidator/)
 
 SQL queries formatting, syntactic and semantic validation
