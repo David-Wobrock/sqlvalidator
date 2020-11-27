@@ -1,7 +1,7 @@
 from sqlvalidator.grammar.tokeniser import (
-    to_tokens,
-    split_with_sep,
     get_tokens_until_not_in,
+    split_with_sep,
+    to_tokens,
 )
 
 

@@ -1,10 +1,9 @@
 import os
 import sys
 import tokenize
-from typing import Tuple, IO
+from typing import IO, Tuple
 
 from . import sql_formatter
-
 
 SQLFORMAT_COMMENT = "sqlformat"
 

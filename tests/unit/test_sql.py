@@ -1,8 +1,8 @@
 from sqlvalidator.grammar.sql import (
     BooleanCondition,
-    Integer,
-    Condition,
     Column,
+    Condition,
+    Integer,
     transform,
 )
 

@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: 3.6
       - name: Installing dependencies
-        run: python3.6 -m pip install black==20.8b1 mypy==0.790 flake8==3.8.4
+        run: python3.6 -m pip install black==20.8b1 mypy==0.790 flake8==3.8.4 isort==5.6.4
 
       - name: Lint using flake8
         run: flake8 --max-line-length=88 --ignore=E203,W503,E231 .
@@ -27,6 +27,8 @@ jobs:
         run: black --check .
       - name: Check type hinting using mypy
         run: mypy .
+      - name: Check import order using isort
+        run: isort --check-only .
 
   test:
     name: Run test suite
