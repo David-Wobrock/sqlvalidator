@@ -1,5 +1,7 @@
 from typing import Any
 
+DEFAULT_LINE_LENGTH = 88
+
 
 def transform(obj: Any) -> str:
     if hasattr(obj, "transform"):
@@ -444,7 +446,10 @@ class FunctionCall(Expression):
 
     def __str__(self):
         transformed_args = [transform(arg) for arg in self.args]
-        with_newlines = any("\n" in arg for arg in transformed_args)
+        with_newlines = (
+            any("\n" in arg for arg in transformed_args)
+            or len(", ".join(transformed_args)) > DEFAULT_LINE_LENGTH
+        )
 
         function_str = self.function_name.upper() + "("
         if with_newlines:
@@ -666,7 +671,14 @@ class Parenthesis(Expression):
         self.args = args
 
     def __str__(self):
-        return "({})".format(", ".join(map(transform, self.args)))
+        return "({})".format(
+            ", ".join(
+                "\n" + a.transform(is_subquery=True) + "\n"
+                if isinstance(a, SelectStatement)
+                else transform(a)
+                for a in self.args
+            )
+        )
 
     def __repr__(self):
         return "<Parenthesis: {}>".format(", ".join(map(repr, self.args)))
@@ -890,6 +902,45 @@ class Join(Expression):
             self.right_from,
             self.on,
             self.using,
+        )
+
+
+class CombinedQueries(Expression):
+    SET_OPERATORS = ("union", "intersect", "except")
+
+    def __init__(self, set_operator, left_query, right_query):
+        self.set_operator = set_operator
+        self.left_query = left_query
+        self.right_query = right_query
+
+    def __str__(self):
+        left_query = transform(self.left_query)
+        right_query = transform(self.right_query)
+        if isinstance(self.right_query, Table):
+            right_query = " " + right_query
+        else:
+            right_query = "\n" + right_query
+
+        return "{}\n{}{}".format(left_query, self.set_operator.upper(), right_query)
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.set_operator == other.set_operator
+            and self.left_query == other.left_query
+            and self.right_query == other.right_query
+        )
+
+    def __repr__(self):
+        return """<{}:
+  Set Operator: {!r}
+  Left query: {!r}
+  Right query: {!r}
+""".format(
+            self.__class__.__name__,
+            self.set_operator,
+            self.left_query,
+            self.right_query,
         )
 
 

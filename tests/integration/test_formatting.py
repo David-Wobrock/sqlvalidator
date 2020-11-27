@@ -1080,7 +1080,114 @@ FROM t;
 def test_multiple_regexes():
     sql = r"select REGEXP_REPLACE(regexp_replace(NORMALIZE_AND_CASEFOLD ( arr [SAFE_OFFSET(0)],NFD), r'\p{{Mn}}', ''), r'[^a-zA-Z0-9]', ' ') from t;"  # noqa
     expected = r"""
-SELECT REGEXP_REPLACE(REGEXP_REPLACE(NORMALIZE_AND_CASEFOLD(arr[SAFE_OFFSET(0)], NFD), r'\p{{Mn}}', ''), r'[^a-zA-Z0-9]', ' ')
+SELECT REGEXP_REPLACE(
+ REGEXP_REPLACE(NORMALIZE_AND_CASEFOLD(arr[SAFE_OFFSET(0)], NFD), r'\p{{Mn}}', ''),
+ r'[^a-zA-Z0-9]',
+ ' '
+)
 FROM t;
 """  # NOQA
+    assert format_sql(sql) == expected.strip()
+
+
+def test_parentheses_nested_select():
+    sql = """select (SELECT SUM(IF(hh = b.some_field.cq[SAFE_OFFSET(o)],1,0))
+FROM UNNEST(a.other_field.cq) hh OFFSET o) * 100 / LEAST(a.other_field.len, b.some_field.len) result_field
+from t1 a
+join t2 b USING (f1)
+"""  # NOQA
+    expected = """
+SELECT (
+ SELECT SUM(IF(hh = b.some_field.cq[SAFE_OFFSET(o)], 1, 0))
+ FROM UNNEST(a.other_field.cq) hh
+ OFFSET o
+) * 100 / LEAST(a.other_field.len, b.some_field.len) result_field
+FROM t1 a
+JOIN t2 b
+USING (f1)
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_union():
+    sql = "select f1 from t1 union t2;"
+    expected = """
+SELECT f1
+FROM t1
+UNION t2;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_intersect():
+    sql = "select f1 from t1 intersect   t2;"
+    expected = """
+SELECT f1
+FROM t1
+INTERSECT t2;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_except():
+    sql = "select f1 from t1 except select * from `t2`;"
+    expected = """
+SELECT f1
+FROM t1
+EXCEPT
+SELECT *
+FROM `t2`;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_query_combinations():
+    sql = """SELECT A FROM TA
+INTERSECT SELECT B FROM TB EXCEPT (SELECT C FROM TB)
+UNION SELECT D FROM TD"""
+    expected = """
+SELECT a
+FROM ta
+INTERSECT
+SELECT b
+FROM tb
+EXCEPT
+(
+ SELECT c
+ FROM tb
+)
+UNION
+SELECT d
+FROM td
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_long_function_calls():
+    sql = """select STRUCT(LENGTH(a_very_very_very_long_field_name_that_takes_quite_some_space) AS len, TO_CODE_POINTS(some_other_very_very_long_field_name) AS cq) a_very_very_long_result_field
+from t;
+"""  # NOQA
+    expected = """
+SELECT STRUCT(
+ LENGTH(a_very_very_very_long_field_name_that_takes_quite_some_space) AS len,
+ TO_CODE_POINTS(some_other_very_very_long_field_name) AS cq
+) a_very_very_long_result_field
+FROM t;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_long_function_calls_multiple_fields():
+    sql = """select f1, STRUCT(LENGTH(a_very_very_very_long_field_name_that_takes_quite_some_space) AS len, TO_CODE_POINTS(some_other_very_very_long_field_name) AS cq) a_very_very_long_result_field
+from t;
+"""  # NOQA
+    expected = """
+SELECT
+ f1,
+ STRUCT(
+  LENGTH(a_very_very_very_long_field_name_that_takes_quite_some_space) AS len,
+  TO_CODE_POINTS(some_other_very_very_long_field_name) AS cq
+ ) a_very_very_long_result_field
+FROM t;
+"""
     assert format_sql(sql) == expected.strip()

@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=["tests/"]),
     extras_require={
         "test": [
-            "pytest==6.1.1",
+            "pytest==6.1.2",
         ]
     },
     keywords=(
@@ -52,6 +52,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     entry_points={"console_scripts": ["sqlvalidator = sqlvalidator.main:_main"]},
 )

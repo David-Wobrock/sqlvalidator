@@ -28,6 +28,7 @@ from sqlvalidator.grammar.sql import (
     WindowFrameClause,
     Case,
     Index,
+    CombinedQueries,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_one_of,
@@ -181,7 +182,11 @@ class FromStatementParser:
                 expression = Table(next_token)
 
         next_token = next(tokens, None)
-        if next_token is not None and next_token not in Join.VALUES:
+        if (
+            next_token is not None
+            and next_token not in Join.VALUES
+            and next_token not in CombinedQueries.SET_OPERATORS
+        ):
             if next_token == "as":
                 with_as = True
                 alias = next(tokens)
@@ -190,6 +195,36 @@ class FromStatementParser:
                 alias = next_token
             expression = Alias(expression, alias, with_as)
             next_token = next(tokens, None)
+
+        while next_token in CombinedQueries.SET_OPERATORS:
+            left_expr = expression
+            expression_tokens, next_token = get_tokens_until_not_in(
+                tokens, CombinedQueries.SET_OPERATORS, first_token=next_token
+            )
+            set_operator = SetOperatorTypeParser.parse(iter(expression_tokens))
+            expression_tokens, next_token = get_tokens_until_one_of(
+                tokens,
+                CombinedQueries.SET_OPERATORS,
+                first_token=next_token,
+            )
+            if expression_tokens[0] == "select":
+                right_expr = SelectStatementParser.parse(iter(expression_tokens[1:]))
+            else:
+                right_expr = FromStatementParser.parse(iter(expression_tokens))
+            expression = CombinedQueries(set_operator, left_expr, right_expr)
+
+            if (
+                next_token is not None
+                and next_token not in CombinedQueries.SET_OPERATORS
+            ):
+                if next_token == "as":
+                    with_as = True
+                    alias = next(tokens)
+                else:
+                    with_as = False
+                    alias = next_token
+                expression = Alias(expression, alias, with_as)
+                next_token = next(tokens, None)
 
         while next_token in Join.VALUES:
             left_expr = expression
@@ -236,6 +271,12 @@ class JoinTypeParser:
     @staticmethod
     def parse(tokens):
         # TODO: assert known join types
+        return " ".join(tokens).upper()
+
+
+class SetOperatorTypeParser:
+    @staticmethod
+    def parse(tokens):
         return " ".join(tokens).upper()
 
 
