@@ -26,7 +26,7 @@ jobs:
       - name: Check formatting using black
         run: black --check .
       - name: Check type hinting using mypy
-        run: mypy --ignore-missing-imports .
+        run: mypy .
 
   test:
     name: Run test suite
