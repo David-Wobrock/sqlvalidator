@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 DEFAULT_LINE_LENGTH = 88
@@ -104,7 +105,14 @@ class SelectStatement:
             statement_str += ";"
         return statement_str
 
-    def validate(self):
+    def _validate_sql(self, sql) -> str:
+        pattern = r"(?i)(?P<invalid_comma>\,+)\s*FROM"
+        match = re.search(pattern, sql)
+        occurrences = match.groupdict() if match else {}
+        error = "Invalid comma found before FROM statement"
+        return error if occurrences.get("invalid_comma") else ""
+
+    def validate(self, sql):
         errors = []
         if isinstance(self.from_statement, Parenthesis) and isinstance(
             self.from_statement.args[0], SelectStatement
@@ -129,6 +137,9 @@ class SelectStatement:
             errors += self.limit_clause.validate(known_fields)
         if self.offset_clause:
             errors += self.offset_clause.validate(known_fields)
+
+        errors += self._validate_sql(sql)
+
         return errors
 
     @property

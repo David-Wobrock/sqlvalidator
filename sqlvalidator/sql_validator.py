@@ -19,7 +19,7 @@ class SQLQuery:
         self.validated = True
         try:
             select_statement = SQLStatementParser.parse(to_tokens(self.sql))
-            self.errors = select_statement.validate()
+            self.errors = select_statement.validate(self.sql)
         except ParsingError as ex:
             self.errors.append(str(ex))
 
