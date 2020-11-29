@@ -56,6 +56,21 @@ def test_where_parenthesis_without_from():
     assert_invalid_sql(sql)
 
 
+def test_invalid_select_comma_before_from():
+    sql = "SELECT field1, field2, FROM table"
+    assert_invalid_sql(sql)
+
+
+def test_invalid_select_comma_before_from_case_insensitive():
+    sql = "SELECT field1, field2, from table"
+    assert_invalid_sql(sql)
+
+
+def test_invalid_nested_select_comma_before_from():
+    sql = "SELECT field FROM (SELECT *, FROM table)"
+    assert_invalid_sql(sql)
+
+
 def test_where_boolean_condition():
     sql = (
         "SELECT field1 FROM (SELECT field1 FROM table) WHERE field1 = 3 and field2 = 4"
