@@ -564,7 +564,21 @@ class WindowFrameClause(Expression):
 
 
 class Column(Expression):
-    KEYWORDS = ("_table_suffix", "nfc", "nfkc", "nfd", "nfkd")
+    KEYWORDS = (
+        "_table_suffix",
+        "_partitiondate",
+        "nfc",
+        "nfkc",
+        "nfd",
+        "nfkd",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    )
 
     def __str__(self):
         if self.value in self.KEYWORDS:
@@ -579,10 +593,45 @@ class Column(Expression):
 
 
 class Type(Expression):
-    VALUES = ("int", "float", "day", "month", "timestamp")
+    VALUES = ("int", "float", "day", "month", "timestamp", "int64")
 
     def __str__(self):
         return self.value.upper()
+
+
+class DatePartExtraction(Expression):
+    PARTS = (
+        "microsecond",
+        "second",
+        "minute",
+        "hour",
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year",
+        "second_microsecond",
+        "minute_microsecond",
+        "minute_second",
+        "hour_microsecond",
+        "hour_second",
+        "hour_minute",
+        "day_microsecond",
+        "day_second",
+        "day_minute",
+        "day_hour",
+        "year_month",
+        "dayofmonth",
+        "dayofweek",
+        "dayofyear",
+    )
+
+    def __init__(self, part, date_expression):
+        super().__init__(date_expression)
+        self.part = part
+
+    def __str__(self):
+        return "{} FROM {}".format(self.part.upper(), transform(self.value))
 
 
 class String(Expression):
@@ -638,14 +687,10 @@ class Null(Expression):
 class Boolean(Expression):
     TRUE_VALUES = (
         "true",
-        "t",
-        "y",
         "yes",
     )
     FALSE_VALUES = (
         "false",
-        "f",
-        "n",
         "no",
     )
     BOOLEAN_VALUES = TRUE_VALUES + FALSE_VALUES
@@ -1020,6 +1065,19 @@ class BooleanCondition(Expression):
     @property
     def return_type(self):
         return bool
+
+
+class Negation(Expression):
+    PREDICATE = "not"
+
+    def __init__(self, expression):
+        super().__init__(expression)
+
+    def __str__(self):
+        negation = "NOT"
+        if not isinstance(self.value, Parenthesis):
+            negation += " "
+        return negation + transform(self.value)
 
 
 class ExceptClause(Expression):

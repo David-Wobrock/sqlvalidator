@@ -8,6 +8,7 @@ from sqlvalidator.grammar.sql import (
     Column,
     CombinedQueries,
     Condition,
+    DatePartExtraction,
     ExceptClause,
     FunctionCall,
     GroupByClause,
@@ -16,6 +17,7 @@ from sqlvalidator.grammar.sql import (
     Integer,
     Join,
     LimitClause,
+    Negation,
     Null,
     OffsetClause,
     OnClause,
@@ -403,8 +405,11 @@ class ExpressionParser:
             expression = Boolean(main_token)
         elif main_token in Null.VALUES:
             expression = Null()
-        elif main_token in Type.VALUES:
-            expression = Type(main_token)
+        elif main_token == Negation.PREDICATE:
+            rest_expression, next_token = ExpressionParser.parse(
+                tokens, is_right_hand=True
+            )
+            expression = Negation(rest_expression)
         elif main_token == "(":
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             arguments = ExpressionListParser.parse(iter(argument_tokens))
@@ -431,6 +436,16 @@ class ExpressionParser:
                 arguments = ExpressionListParser.parse(iter(argument_tokens))
                 expression = FunctionCall(main_token, *arguments)
                 next_token = next(tokens, None)
+            elif (
+                next_token is not None
+                and main_token in DatePartExtraction.PARTS
+                and next_token == "from"
+            ):
+                rest_expression = ExpressionParser.parse(tokens)
+                expression = DatePartExtraction(main_token, rest_expression)
+                next_token = next(tokens, None)
+            elif main_token in Type.VALUES:
+                expression = Type(main_token)
             elif next_token is not None and next_token == "[":
                 argument_tokens, next_token = get_tokens_until_one_of(
                     tokens, stop_words=["]"]

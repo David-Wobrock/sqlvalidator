@@ -28,6 +28,15 @@ FROM table_stmt;
     assert format_sql(sql) == expected.strip()
 
 
+def test_extract_function():
+    sql = "select extract(day from date) from table_stmt;"
+    expected = """
+SELECT EXTRACT(DAY FROM date)
+FROM table_stmt;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_no_from_statement():
     sql = "select 1;"
     expected = "SELECT 1;"
@@ -591,6 +600,45 @@ FROM (
  WHERE col <> 0 AND long__name__col IS NOT NULL
 ) a
 ORDER BY a.field_id
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_filter_not_predicate():
+    sql = """
+SELECT field
+FROM tt where not bool_field
+"""
+    expected = """
+SELECT field
+FROM tt
+WHERE NOT bool_field
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_boolean_filter_not_predicate():
+    sql = """
+SELECT field
+FROM tt where not bool_field and not (x = Y)
+"""
+    expected = """
+SELECT field
+FROM tt
+WHERE NOT bool_field AND NOT(x = y)
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_boolean_filter_first_not_predicate():
+    sql = """
+SELECT field
+FROM tt where not (bool_field) and (x = Y)
+"""
+    expected = """
+SELECT field
+FROM tt
+WHERE NOT(bool_field) AND (x = y)
 """
     assert format_sql(sql) == expected.strip()
 
