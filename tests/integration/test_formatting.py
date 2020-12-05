@@ -112,6 +112,17 @@ FROM table_stmt;
     assert format_sql(sql) == expected.strip()
 
 
+def test_multiple_columns_with_trailing_comma():
+    sql = "select col, col2, from table_stmt;"
+    expected = """
+SELECT
+ col,
+ col2
+FROM table_stmt;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_parenthesis():
     sql = "select (email,id), id from auth_user;"
     expected = """
