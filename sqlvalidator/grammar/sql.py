@@ -593,7 +593,7 @@ class Column(Expression):
 
 
 class Type(Expression):
-    VALUES = ("int", "float", "day", "month", "timestamp", "int64")
+    VALUES = ("int", "float", "day", "month", "timestamp", "int64", "string")
 
     def __str__(self):
         return self.value.upper()
