@@ -1,7 +1,7 @@
 import os
 import sys
 import tokenize
-from typing import IO, Tuple
+from typing import IO, List, Optional, Set, Tuple
 
 from . import sql_formatter
 
@@ -159,7 +159,16 @@ def get_formatted_file_content(file: IO) -> Tuple[int, str]:
     return count_changed_sql, formatted_file_content
 
 
-def format_file(filename: str, check: bool) -> int:
+def format_file(
+    filename: str, check: bool, seen_files: Optional[Set[str]] = None
+) -> Tuple[int, int, Set[str]]:
+    seen_files = seen_files or set()
+
+    abs_filename = os.path.abspath(filename)
+    if abs_filename in seen_files:
+        return 0, 0, seen_files
+    seen_files.add(abs_filename)
+
     with open(filename, "r") as file:
         count_changed_sql, new_content = get_formatted_file_content(file)
 
@@ -175,24 +184,70 @@ def format_file(filename: str, check: bool) -> int:
             "{} {} ({} changed SQL)".format(starting_text, filename, count_changed_sql)
         )
 
-    return count_changed_sql
+    return 1, count_changed_sql, seen_files
 
 
-def format_dir(dirname: str, check: bool) -> Tuple[int, int]:
+def format_dir(
+    dirname: str, check: bool, seen_files: Optional[Set[str]] = None
+) -> Tuple[int, int, Set[str]]:
+    seen_files = seen_files or set()
     changed_files, total_changed_sql = 0, 0
     for root, _, files in os.walk(dirname):
         for filename in files:
             if filename.endswith(".py"):
                 abs_filename = os.path.join(root, filename)
                 try:
-                    changed_sql = format_file(abs_filename, check)
+                    num_files, changed_sql, seen_files = format_file(
+                        abs_filename, check, seen_files
+                    )
+                    changed_files += num_files
                     total_changed_sql += changed_sql
-                    if changed_sql:
-                        changed_files += 1
                 except RecursionError:
-                    print("could not format {}".format(filename))
+                    print("could not format {}".format(abs_filename))
 
-    return changed_files, total_changed_sql
+    return changed_files, total_changed_sql, seen_files
+
+
+def handle_one_input(
+    src_input: str,
+    format_input=True,
+    check_input=False,
+    seen_files: Optional[Set[str]] = None,
+) -> Tuple[int, int, Set[str]]:
+    assert format_input != check_input
+    seen_files = seen_files or set()
+
+    if os.path.isfile(src_input):
+        num_files, changed_sql, seen_files = format_file(
+            src_input, check_input, seen_files
+        )
+    elif os.path.isdir(src_input):
+        num_files, changed_sql, seen_files = format_dir(
+            src_input, check_input, seen_files
+        )
+    else:
+        print("Error: Invalid input")
+        num_files, changed_sql, seen_files = 0, 0, set()
+    return num_files, changed_sql, seen_files
+
+
+def handle_inputs(src_inputs: List[str], format_input=True, check_input=False):
+    assert format_input != check_input
+
+    total_num_files = 0
+    total_changed_sql = 0
+    seen_files: Set[str] = set()
+    for src_input in src_inputs:
+        num_files, changed_sql, new_seen_files = handle_one_input(
+            src_input, format_input, check_input, seen_files
+        )
+        total_num_files += num_files
+        total_changed_sql += changed_sql
+        seen_files |= new_seen_files
+
+    print_summary(total_num_files, total_changed_sql, check_input)
+    if total_changed_sql > 0:
+        sys.exit(1)
 
 
 def print_summary(num_changed_files: int, changed_sql: int, check: bool):
@@ -207,23 +262,3 @@ def print_summary(num_changed_files: int, changed_sql: int, check: bool):
         print("{} {} ({}).".format(num_files_str, content, details))
     else:
         print("No file {}.".format(content))
-
-
-def handle_input(src_input: str, format_input=True, check_input=False):
-    assert format_input != check_input
-
-    if os.path.isfile(src_input):
-        num_files = 1
-        changed_sql = format_file(src_input, check_input)
-        print_summary(num_files, changed_sql, check_input)
-        if changed_sql > 0:
-            sys.exit(1)
-
-    elif os.path.isdir(src_input):
-        num_files, changed_sql = format_dir(src_input, check_input)
-        print_summary(num_files, changed_sql, check_input)
-        if changed_sql > 0:
-            sys.exit(1)
-
-    else:
-        print("Error: Invalid input")

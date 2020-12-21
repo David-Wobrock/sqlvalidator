@@ -9,7 +9,7 @@ def _main() -> None:
     parser = argparse.ArgumentParser(
         description="SQL formatting and basic schemaless validation"
     )
-    parser.add_argument("SRC", help="input. Either a file or a folder.")
+    parser.add_argument("SRC", help="input. Either a file or a folder.", nargs="+")
     parser.add_argument(
         "--version", action="version", version="sqlvalidator " + __version__
     )
@@ -31,10 +31,10 @@ def _main() -> None:
     )
 
     args = parser.parse_args()
-    src_input = args.SRC
+    src_inputs = args.SRC
 
-    file_formatter.handle_input(
-        src_input, format_input=args.format, check_input=args.check_format
+    file_formatter.handle_inputs(
+        src_inputs, format_input=args.format, check_input=args.check_format
     )
 
 
