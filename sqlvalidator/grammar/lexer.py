@@ -36,6 +36,7 @@ from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_closing_parenthesis,
     get_tokens_until_not_in,
     get_tokens_until_one_of,
+    lower,
 )
 
 
@@ -47,7 +48,7 @@ class SQLStatementParser:
     @staticmethod
     def parse(tokens):
         next_token = next(tokens)
-        if next_token == "select":
+        if lower(next_token) == "select":
             return SelectStatementParser.parse(tokens)
         raise ParsingError
 
@@ -62,12 +63,12 @@ class SelectStatementParser:
 
         select_all = select_distinct = False
         select_distinct_on = None
-        if next_token == "all":
+        if lower(next_token) == "all":
             select_all = True
-        elif next_token == "distinct":
+        elif lower(next_token) == "distinct":
             select_distinct = True
             next_token = next(tokens)
-            if next_token == "on":
+            if lower(next_token) == "on":
                 next(tokens)  # Consume parenthesis
                 distinct_on_tokens = get_tokens_until_closing_parenthesis(tokens)
                 select_distinct_on = ExpressionListParser.parse(
@@ -83,7 +84,7 @@ class SelectStatementParser:
         )
         expressions = ExpressionListParser.parse(iter(expression_tokens))
 
-        if next_token == "from":
+        if lower(next_token) == "from":
             expression_tokens, next_token = get_tokens_until_one_of(
                 tokens, ["where", "group", "having", "order", "limit", "offset", ";"]
             )
@@ -91,7 +92,7 @@ class SelectStatementParser:
         else:
             from_statement = None
 
-        if next_token == "where":
+        if lower(next_token) == "where":
             expression_tokens, next_token = get_tokens_until_one_of(
                 tokens, ["group", "having", "order", "limit", "offset", ";"]
             )
@@ -99,9 +100,9 @@ class SelectStatementParser:
         else:
             where_clause = None
 
-        if next_token == "group":
+        if lower(next_token) == "group":
             next_token = next(tokens, None)
-            if not next_token == "by":
+            if not lower(next_token) == "by":
                 raise ParsingError("Missing BY after GROUP")
             expression_tokens, next_token = get_tokens_until_one_of(
                 tokens, ["having", "order", "limit", "offset", ";"]
@@ -110,7 +111,7 @@ class SelectStatementParser:
         else:
             group_by_clause = None
 
-        if next_token == "having":
+        if lower(next_token) == "having":
             expression_tokens, next_token = get_tokens_until_one_of(
                 tokens, ["order", "limit", "offset", ";"]
             )
@@ -118,9 +119,9 @@ class SelectStatementParser:
         else:
             having_clause = None
 
-        if next_token == "order":
+        if lower(next_token) == "order":
             next_token = next(tokens, None)
-            if not next_token == "by":
+            if not lower(next_token) == "by":
                 raise ParsingError("Missing BY after ORDER")
             expression_tokens, next_token = get_tokens_until_one_of(
                 tokens, ["limit", "offset", ";"]
@@ -129,7 +130,7 @@ class SelectStatementParser:
         else:
             order_by_clause = None
 
-        if next_token == "limit":
+        if lower(next_token) == "limit":
             expression_tokens, next_token = get_tokens_until_one_of(
                 tokens, ["offset", ";"]
             )
@@ -137,7 +138,7 @@ class SelectStatementParser:
         else:
             limit_clause = None
 
-        if next_token == "offset":
+        if lower(next_token) == "offset":
             expression_tokens, next_token = get_tokens_until_one_of(tokens, [";"])
             offset_clause = OffsetClauseParser.parse(iter(expression_tokens))
         else:
@@ -174,7 +175,7 @@ class FromStatementParser:
         elif next_token == "'" or next_token == '"' or next_token == "`":
             expression = Table(StringParser.parse(tokens, next_token))
         else:
-            if next_token == "unnest":
+            if lower(next_token) == "unnest":
                 next_next_token = next(tokens)
                 assert next_next_token == "("
                 argument_tokens = get_tokens_until_closing_parenthesis(tokens)
@@ -186,10 +187,10 @@ class FromStatementParser:
         next_token = next(tokens, None)
         if (
             next_token is not None
-            and next_token not in Join.VALUES
-            and next_token not in CombinedQueries.SET_OPERATORS
+            and lower(next_token) not in Join.VALUES
+            and lower(next_token) not in CombinedQueries.SET_OPERATORS
         ):
-            if next_token == "as":
+            if lower(next_token) == "as":
                 with_as = True
                 alias = next(tokens)
             else:
@@ -198,7 +199,7 @@ class FromStatementParser:
             expression = Alias(expression, alias, with_as)
             next_token = next(tokens, None)
 
-        while next_token in CombinedQueries.SET_OPERATORS:
+        while lower(next_token) in CombinedQueries.SET_OPERATORS:
             left_expr = expression
             expression_tokens, next_token = get_tokens_until_not_in(
                 tokens, CombinedQueries.SET_OPERATORS, first_token=next_token
@@ -209,7 +210,7 @@ class FromStatementParser:
                 CombinedQueries.SET_OPERATORS,
                 first_token=next_token,
             )
-            if expression_tokens[0] == "select":
+            if lower(expression_tokens[0]) == "select":
                 right_expr = SelectStatementParser.parse(iter(expression_tokens[1:]))
             else:
                 right_expr = FromStatementParser.parse(iter(expression_tokens))
@@ -217,9 +218,9 @@ class FromStatementParser:
 
             if (
                 next_token is not None
-                and next_token not in CombinedQueries.SET_OPERATORS
+                and lower(next_token) not in CombinedQueries.SET_OPERATORS
             ):
-                if next_token == "as":
+                if lower(next_token) == "as":
                     with_as = True
                     alias = next(tokens)
                 else:
@@ -228,7 +229,7 @@ class FromStatementParser:
                 expression = Alias(expression, alias, with_as)
                 next_token = next(tokens, None)
 
-        while next_token in Join.VALUES:
+        while lower(next_token) in Join.VALUES:
             left_expr = expression
             expression_tokens, next_token = get_tokens_until_not_in(
                 tokens, Join.VALUES, first_token=next_token
@@ -245,10 +246,10 @@ class FromStatementParser:
                 tokens,
                 Join.VALUES,
             )
-            if on_or_using == "on":
+            if lower(on_or_using) == "on":
                 expression = ExpressionParser.parse(iter(expression_tokens))
                 on = OnClause(expression)
-            elif on_or_using == "using":
+            elif lower(on_or_using) == "using":
                 expressions = ExpressionParser.parse(iter(expression_tokens))
                 using = UsingClause(expressions)
             else:
@@ -256,8 +257,8 @@ class FromStatementParser:
 
             expression = Join(join_type, left_expr, right_expr, on=on, using=using)
 
-            if next_token is not None and next_token not in Join.VALUES:
-                if next_token == "as":
+            if next_token is not None and lower(next_token) not in Join.VALUES:
+                if lower(next_token) == "as":
                     with_as = True
                     alias = next(tokens)
                 else:
@@ -293,7 +294,7 @@ class GroupByParser:
     @staticmethod
     def parse(tokens):
         next_token = next(tokens)
-        if next_token == "rollup":
+        if lower(next_token) == "rollup":
             rollup = True
             next_token = None
         else:
@@ -333,10 +334,10 @@ class OrderByItemParser:
     def parse(tokens):
         expression_tokens, next_token = get_tokens_until_one_of(tokens, ["asc", "desc"])
         expression = ExpressionParser.parse(iter(expression_tokens))
-        if next_token == "asc":
+        if lower(next_token) == "asc":
             has_asc = True
             has_desc = False
-        elif next_token == "desc":
+        elif lower(next_token) == "desc":
             has_asc = False
             has_desc = True
         else:
@@ -350,7 +351,7 @@ class LimitClauseParser:
     @staticmethod
     def parse(tokens):
         next_token = next(tokens)
-        if next_token == "all":
+        if lower(next_token) == "all":
             limit_all = True
             expression = None
         else:
@@ -401,11 +402,11 @@ class ExpressionParser:
             expression = StringParser.parse(tokens, main_token)
         elif main_token.isdigit():
             expression = Integer(main_token)
-        elif main_token in Boolean.BOOLEAN_VALUES:
+        elif lower(main_token) in Boolean.BOOLEAN_VALUES:
             expression = Boolean(main_token)
-        elif main_token in Null.VALUES:
+        elif lower(main_token) in Null.VALUES:
             expression = Null()
-        elif main_token == Negation.PREDICATE:
+        elif lower(main_token) == Negation.PREDICATE:
             rest_expression, next_token = ExpressionParser.parse(
                 tokens, is_right_hand=True
             )
@@ -414,12 +415,12 @@ class ExpressionParser:
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             arguments = ExpressionListParser.parse(iter(argument_tokens))
             expression = Parenthesis(*arguments)
-        elif main_token == "case":
+        elif lower(main_token) == "case":
             argument_tokens, next_token = get_tokens_until_one_of(tokens, ["end"])
-            assert next_token == "end"
+            assert lower(next_token) == "end"
             next_token = next(tokens, None)
             expression = CaseParser.parse(iter(argument_tokens))
-        elif main_token == "select":
+        elif lower(main_token) == "select":
             argument_tokens, next_token = get_tokens_until_one_of(tokens, [])
             next_token = next(tokens, None)
             expression = SelectStatementParser.parse(iter(argument_tokens))
@@ -438,13 +439,13 @@ class ExpressionParser:
                 next_token = next(tokens, None)
             elif (
                 next_token is not None
-                and main_token in DatePartExtraction.PARTS
-                and next_token == "from"
+                and lower(main_token) in DatePartExtraction.PARTS
+                and lower(next_token) == "from"
             ):
                 rest_expression = ExpressionParser.parse(tokens)
                 expression = DatePartExtraction(main_token, rest_expression)
                 next_token = next(tokens, None)
-            elif main_token in Type.VALUES:
+            elif lower(main_token) in Type.VALUES:
                 expression = Type(main_token)
             elif next_token is not None and next_token == "[":
                 argument_tokens, next_token = get_tokens_until_one_of(
@@ -459,9 +460,9 @@ class ExpressionParser:
                 expression = Integer(-int(next_token))
                 next_token = next(tokens, None)
             elif (
-                main_token in String.PREFIXES
+                lower(main_token) in String.PREFIXES
                 and next_token is not None
-                and next_token in String.QUOTES
+                and lower(next_token) in String.QUOTES
             ):
                 expression = StringParser.parse(
                     tokens, start_quote=next_token, prefix=main_token
@@ -469,16 +470,16 @@ class ExpressionParser:
             else:
                 expression = Column(main_token)
 
-        if next_token == "over":
+        if lower(next_token) == "over":
             opening_parenthesis = next(tokens, None)
             if opening_parenthesis != "(":
                 raise ParsingError("expected '('")
 
             argument_tokens = iter(get_tokens_until_closing_parenthesis(tokens))
             argument_next_token = next(argument_tokens, None)
-            if argument_next_token == "partition":
+            if lower(argument_next_token) == "partition":
                 argument_next_token = next(argument_tokens, None)
-                if not argument_next_token or argument_next_token != "by":
+                if not argument_next_token or lower(argument_next_token) != "by":
                     raise ParsingError("Missing BY after PARTITION")
                 expression_tokens, argument_next_token = get_tokens_until_one_of(
                     argument_tokens, ["order", "rows", "range"]
@@ -487,9 +488,9 @@ class ExpressionParser:
             else:
                 partition_by = None
 
-            if argument_next_token == "order":
+            if lower(argument_next_token) == "order":
                 argument_next_token = next(argument_tokens, None)
-                if not argument_next_token or argument_next_token != "by":
+                if not argument_next_token or lower(argument_next_token) != "by":
                     raise ParsingError("Missing BY after ORDER")
                 expression_tokens, argument_next_token = get_tokens_until_one_of(
                     argument_tokens, ["rows", "range"]
@@ -498,7 +499,7 @@ class ExpressionParser:
             else:
                 order_by = None
 
-            if argument_next_token in ("rows", "range"):
+            if lower(argument_next_token) in ("rows", "range"):
                 rows_range = argument_next_token
                 expression_tokens, _ = get_tokens_until_one_of(argument_tokens, [])
                 frame_clause = WindowFrameClause(
@@ -524,11 +525,11 @@ class ExpressionParser:
         if is_right_hand:
             return expression, next_token
 
-        if next_token in Condition.PREDICATES:
+        if lower(next_token) in Condition.PREDICATES:
             symbol = next_token
-            if next_token == "is":
+            if lower(next_token) == "is":
                 next_next_token = next(tokens)
-                if next_next_token == "not":
+                if lower(next_next_token) == "not":
                     symbol = "is not"
                 else:
                     tokens, _ = get_tokens_until_one_of(
@@ -538,12 +539,12 @@ class ExpressionParser:
 
             right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
             expression = Condition(expression, symbol, right_hand)
-        elif next_token == "between":
+        elif lower(next_token) == "between":
             symbol = next_token
             right_hand_left, next_token = ExpressionParser.parse(
                 tokens, is_right_hand=True
             )
-            if next_token != "and":
+            if lower(next_token) != "and":
                 raise ParsingError("expected AND")
             right_hand_right, next_token = ExpressionParser.parse(
                 tokens, is_right_hand=True
@@ -555,14 +556,14 @@ class ExpressionParser:
             )
             expression = Condition(expression, symbol, right_hand)
 
-        if next_token in BooleanCondition.PREDICATES:
+        if lower(next_token) in BooleanCondition.PREDICATES:
             left_hand = expression
             symbol = next_token
             right_hand = ExpressionParser.parse(tokens)
             expression = BooleanCondition(symbol, left_hand, right_hand)
             next_token = next(tokens, None)
 
-        if next_token == "except":
+        if lower(next_token) == "except":
             opening_parenthesis = next(tokens, None)
             if opening_parenthesis != "(":
                 raise ParsingError("expected '('")
@@ -579,7 +580,7 @@ class ExpressionParser:
             and next_token != "`"
             and next_token != ";"
         ):
-            if next_token == "as":
+            if lower(next_token) == "as":
                 with_as = True
                 alias, _ = ExpressionParser.parse(tokens, is_right_hand=True)
             else:
@@ -609,7 +610,7 @@ class CaseParser:
     @staticmethod
     def parse(tokens):
         next_token = next(tokens)
-        if next_token == "when":
+        if lower(next_token) == "when":
             expression = None
         else:
             expressions_tokens, next_token = get_tokens_until_one_of(
@@ -620,7 +621,7 @@ class CaseParser:
         when_then = []
         else_expression = None
         while next_token:
-            if next_token == "when":
+            if lower(next_token) == "when":
                 expressions_tokens, _ = get_tokens_until_one_of(tokens, ["then"])
                 when_expression = ExpressionParser.parse(iter(expressions_tokens))
                 expressions_tokens, next_token = get_tokens_until_one_of(
@@ -628,7 +629,7 @@ class CaseParser:
                 )
                 then_expression = ExpressionParser.parse(iter(expressions_tokens))
                 when_then.append((when_expression, then_expression))
-            elif next_token == "else":
+            elif lower(next_token) == "else":
                 expressions_tokens, next_token = get_tokens_until_one_of(tokens, [])
                 else_expression = ExpressionParser.parse(iter(expressions_tokens))
 

@@ -62,13 +62,13 @@ def test_nested_date_functions():
         to_tokens("DATE(TIMESTAMP_TRUNC(CAST(a.date AS TIMESTAMP), MONTH))")
     )
     expected = FunctionCall(
-        "date",
+        "DATE",
         FunctionCall(
-            "timestamp_trunc",
+            "TIMESTAMP_TRUNC",
             FunctionCall(
-                "cast", Alias(Column("a.date"), alias=Type("timestamp"), with_as=True)
+                "CAST", Alias(Column("a.date"), alias=Type("TIMESTAMP"), with_as=True)
             ),
-            Type("month"),
+            Type("MONTH"),
         ),
     )
     assert actual == expected
@@ -296,7 +296,7 @@ def test_consecutive_parenthesis():
     actual = ExpressionParser.parse(to_tokens("((col+1) = 3 AND col2=4)"))
     expected = Parenthesis(
         BooleanCondition(
-            "and",
+            "AND",
             Condition(
                 Parenthesis(Addition(Column("col"), Integer(1))), "=", Integer(3)
             ),
@@ -400,16 +400,16 @@ def test_subquery():
     assert actual == expected
 
 
-def test_parse_date_function1():
+def test_parse_date_function():
     actual = ExpressionParser.parse(to_tokens("DATE('2020-01-01')"))
-    expected = FunctionCall("date", String("2020-01-01", quotes="'"))
+    expected = FunctionCall("DATE", String("2020-01-01", quotes="'"))
     assert actual == expected
 
 
-def test_parse_date_function():
+def test_parse_date_function_condition():
     actual = ExpressionParser.parse(to_tokens("col >= DATE('2020-01-01')"))
     expected = Condition(
-        Column("col"), ">=", FunctionCall("date", String("2020-01-01", quotes="'"))
+        Column("col"), ">=", FunctionCall("DATE", String("2020-01-01", quotes="'"))
     )
     assert actual == expected
 
@@ -500,7 +500,7 @@ GROUP BY f0_
     expected = SelectStatement(
         expressions=[
             Alias(
-                FunctionCall("coalesce", Column("sq_1.col"), Column("sq_2.col")),
+                FunctionCall("COALESCE", Column("sq_1.col"), Column("sq_2.col")),
                 "f0_",
                 with_as=False,
             )
@@ -512,32 +512,32 @@ GROUP BY f0_
                     SelectStatement(
                         expressions=[
                             Alias(
-                                FunctionCall("any_value", Column("col")),
+                                FunctionCall("ANY_VALUE", Column("col")),
                                 "col",
                                 with_as=False,
                             ),
                             Alias(
                                 AnalyticsClause(
                                     FunctionCall(
-                                        "last_value",
-                                        FunctionCall("any_value", Column("col2")),
+                                        "LAST_VALUE",
+                                        FunctionCall("ANY_VALUE", Column("col2")),
                                     ),
                                     partition_by=[
-                                        FunctionCall("any_value", Column("col"))
+                                        FunctionCall("ANY_VALUE", Column("col"))
                                     ],
                                     order_by=OrderByClause(
                                         OrderByItem(
-                                            FunctionCall("sum", Column("clicks")),
+                                            FunctionCall("SUM", Column("clicks")),
                                             has_asc=True,
                                         ),
                                         OrderByItem(
-                                            FunctionCall("sum", Column("metric")),
+                                            FunctionCall("SUM", Column("metric")),
                                             has_asc=True,
                                         ),
                                     ),
                                     frame_clause=WindowFrameClause(
-                                        "range",
-                                        "between unbounded preceding and unbounded following",  # noqa
+                                        "RANGE",
+                                        "BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",  # noqa
                                     ),
                                 ),
                                 "last",
@@ -553,10 +553,10 @@ GROUP BY f0_
                                     from_statement=Table(String("events", quotes="`")),
                                     where_clause=WhereClause(
                                         Condition(
-                                            Column("_table_suffix"),
-                                            "between",
+                                            Column("_TABLE_SUFFIX"),
+                                            "BETWEEN",
                                             BooleanCondition(
-                                                "and",
+                                                "AND",
                                                 String("20200410", quotes="'"),
                                                 String("20200510", quotes="'"),
                                             ),
@@ -576,7 +576,7 @@ GROUP BY f0_
                                                 Column("*"),
                                                 Alias(
                                                     AnalyticsClause(
-                                                        FunctionCall("row_number"),
+                                                        FunctionCall("ROW_NUMBER"),
                                                         partition_by=[Column("hash")],
                                                         order_by=None,
                                                         frame_clause=None,
@@ -590,10 +590,10 @@ GROUP BY f0_
                                             ),
                                             where_clause=WhereClause(
                                                 Condition(
-                                                    Column("_table_suffix"),
-                                                    "between",
+                                                    Column("_TABLE_SUFFIX"),
+                                                    "BETWEEN",
                                                     BooleanCondition(
-                                                        "and",
+                                                        "AND",
                                                         String("20200401", quotes="'"),
                                                         String("20200501", quotes="'"),
                                                     ),
@@ -623,7 +623,7 @@ GROUP BY f0_
                     SelectStatement(
                         expressions=[
                             Alias(
-                                FunctionCall("any_value", Column("col")),
+                                FunctionCall("ANY_VALUE", Column("col")),
                                 "col",
                                 with_as=False,
                             ),
@@ -637,10 +637,10 @@ GROUP BY f0_
                                     from_statement=Table(String("events", quotes="`")),
                                     where_clause=WhereClause(
                                         Condition(
-                                            Column("_table_suffix"),
-                                            "between",
+                                            Column("_TABLE_SUFFIX"),
+                                            "BETWEEN",
                                             BooleanCondition(
-                                                "and",
+                                                "AND",
                                                 String("20200310", quotes="'"),
                                                 String("20200410", quotes="'"),
                                             ),
@@ -660,7 +660,7 @@ GROUP BY f0_
                                                 Column("*"),
                                                 Alias(
                                                     AnalyticsClause(
-                                                        FunctionCall("row_number"),
+                                                        FunctionCall("ROW_NUMBER"),
                                                         partition_by=[Column("hash")],
                                                         order_by=None,
                                                         frame_clause=None,
@@ -674,10 +674,10 @@ GROUP BY f0_
                                             ),
                                             where_clause=WhereClause(
                                                 Condition(
-                                                    Column("_table_suffix"),
-                                                    "between",
+                                                    Column("_TABLE_SUFFIX"),
+                                                    "BETWEEN",
                                                     BooleanCondition(
-                                                        "and",
+                                                        "AND",
                                                         String("20200301", quotes="'"),
                                                         String("20200401", quotes="'"),
                                                     ),

@@ -625,7 +625,7 @@ FROM tt where not bool_field and not (x = Y)
     expected = """
 SELECT field
 FROM tt
-WHERE NOT bool_field AND NOT(x = y)
+WHERE NOT bool_field AND NOT(x = Y)
 """
     assert format_sql(sql) == expected.strip()
 
@@ -638,7 +638,7 @@ FROM tt where not (bool_field) and (x = Y)
     expected = """
 SELECT field
 FROM tt
-WHERE NOT(bool_field) AND (x = y)
+WHERE NOT(bool_field) AND (x = Y)
 """
     assert format_sql(sql) == expected.strip()
 
@@ -1194,19 +1194,19 @@ def test_query_combinations():
 INTERSECT SELECT B FROM TB EXCEPT (SELECT C FROM TB)
 UNION SELECT D FROM TD"""
     expected = """
-SELECT a
-FROM ta
+SELECT A
+FROM TA
 INTERSECT
-SELECT b
-FROM tb
+SELECT B
+FROM TB
 EXCEPT
 (
- SELECT c
- FROM tb
+ SELECT C
+ FROM TB
 )
 UNION
-SELECT d
-FROM td
+SELECT D
+FROM TD
 """
     assert format_sql(sql) == expected.strip()
 
@@ -1236,6 +1236,24 @@ SELECT
   LENGTH(a_very_very_very_long_field_name_that_takes_quite_some_space) AS len,
   TO_CODE_POINTS(some_other_very_very_long_field_name) AS cq
  ) a_very_very_long_result_field
+FROM t;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_capitalized_column_name():
+    sql = "select COL_name from t;"
+    expected = """
+SELECT COL_name
+FROM t;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_capitalized_alias():
+    sql = "select col an_ALIAS from t;"
+    expected = """
+SELECT col an_ALIAS
 FROM t;
 """
     assert format_sql(sql) == expected.strip()

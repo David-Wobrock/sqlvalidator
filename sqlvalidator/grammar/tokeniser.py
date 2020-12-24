@@ -1,7 +1,13 @@
+from typing import Optional
+
 STRING_SPLIT_TOKENS = ("'", '"', "`")
 WHITESPACE_SPLIT_TOKENS = (" ", "\n")
 KEPT_SPLIT_TOKENS = (",", ";", "(", ")", "[", "]", "+", "-", "*", "/", "=", "<", ">")
 MERGE_TOKENS = ("<>", "<=", ">=")
+
+
+def lower(s: Optional[str]) -> Optional[str]:
+    return s.lower() if s else s
 
 
 def get_tokens_until_closing_parenthesis(tokens):
@@ -24,7 +30,7 @@ def get_tokens_until_one_of(tokens, stop_words, first_token=None):
     next_token = next(tokens, None)
     count_parenthesis = 0 if first_token != "(" else 1
     while next_token is not None and not (
-        next_token in stop_words and count_parenthesis <= 0
+        lower(next_token) in stop_words and count_parenthesis <= 0
     ):
         argument_tokens.append(next_token)
         if next_token == "(":
@@ -39,7 +45,7 @@ def get_tokens_until_one_of(tokens, stop_words, first_token=None):
 def get_tokens_until_not_in(tokens, kept_words, first_token=None):
     argument_tokens = [first_token] if first_token is not None else []
     next_token = next(tokens, None)
-    while next_token is not None and next_token in kept_words:
+    while next_token is not None and lower(next_token) in kept_words:
         argument_tokens.append(next_token)
         next_token = next(tokens, None)
 
@@ -119,7 +125,7 @@ def split_tokens(value: str):
             yield from _split_on_kept_token(kept_token, value)
             return
 
-    yield value.lower()
+    yield value
 
 
 def to_tokens(value: str):

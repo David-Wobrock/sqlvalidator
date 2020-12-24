@@ -1,5 +1,7 @@
 from typing import Any
 
+from sqlvalidator.grammar.tokeniser import lower
+
 DEFAULT_LINE_LENGTH = 88
 
 
@@ -696,6 +698,7 @@ class Boolean(Expression):
     BOOLEAN_VALUES = TRUE_VALUES + FALSE_VALUES
 
     def __init__(self, value):
+        value = lower(value)
         assert value in self.BOOLEAN_VALUES
         if value in self.TRUE_VALUES:
             value = True
@@ -1028,7 +1031,7 @@ class BooleanCondition(Expression):
     PREDICATES = ("and", "or")
 
     def __init__(self, type, *args):
-        assert type in ("and", "or")
+        assert type.lower() in ("and", "or")
         self.type = type
         self.args = args
 
