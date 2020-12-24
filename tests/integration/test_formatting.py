@@ -1257,3 +1257,54 @@ SELECT col an_ALIAS
 FROM t;
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_break_long_where():
+    sql = "select * from t where this > 0 AND that < 0 AND foo = 4 AND veryveryverylonglonglongname = 'test' OR other_long_long_long_name < 10"  # noqa
+    expected = """
+SELECT *
+FROM t
+WHERE
+ this > 0
+ AND that < 0
+ AND foo = 4
+ AND veryveryverylonglonglongname = 'test'
+ OR other_long_long_long_name < 10
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_break_long_where_nested_operations():
+    sql = "select * from t where this > 0 AND that < 0 AND foo = 4 AND (veryveryveryveryveryveryverylonglonglongname = 'test' OR other_long_long_long_long_name < 10)"  # noqa
+    expected = """
+SELECT *
+FROM t
+WHERE
+ this > 0
+ AND that < 0
+ AND foo = 4
+ AND (
+  veryveryveryveryveryveryverylonglonglongname = 'test'
+  OR other_long_long_long_long_name < 10
+ )
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_break_long_parenthesis_where_nested_operations():
+    sql = "select * from t where (this > 0 AND that < 0 AND foo = 4 AND (veryveryveryveryveryveryverylonglonglongname = 'test' OR other_long_long_long_long_name < 10) OR x < 0)"  # noqa
+    expected = """
+SELECT *
+FROM t
+WHERE (
+ this > 0
+ AND that < 0
+ AND foo = 4
+ AND (
+  veryveryveryveryveryveryverylonglonglongname = 'test'
+  OR other_long_long_long_long_name < 10
+ )
+ OR x < 0
+)
+"""
+    assert format_sql(sql) == expected.strip()

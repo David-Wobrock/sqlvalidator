@@ -83,7 +83,7 @@ class SelectStatement:
             statement_str += "\nFROM {}".format(from_str)
 
         if self.where_clause:
-            statement_str += "\nWHERE {}".format(transform(self.where_clause))
+            statement_str += "\nWHERE{}".format(transform(self.where_clause))
 
         if self.group_by_clause:
             statement_str += "\nGROUP BY{}".format(transform(self.group_by_clause))
@@ -225,28 +225,12 @@ class Expression:
 
 class WhereClause(Expression):
     def transform(self):
-        """
-        overriden_value = bool(value)
-        value = value or self.value
-
-        is_parenthesis = isinstance(value, Parenthesis)
-        if is_parenthesis:
-            value = value.args[0]
-
-        if isinstance(value, BooleanCondition):
-            join_str = "\n{} ".format(value.type.upper())
-            where_str = "\n" + join_str.join(self.transform(a) for a in value.args)
-            where_str = where_str.replace("\n", "\n ")
-        elif overriden_value:
-            where_str = str(value)
-        else:
-            where_str = " {}".format(value)
-
-        if is_parenthesis:
-            where_str = " ({}\n)".format(where_str)
-        return where_str
-        """
-        return str(self.value)
+        transformed_value = transform(self.value)
+        if isinstance(self.value, Parenthesis) and "\n" in transformed_value:
+            return " (\n " + transform(self.value.args[0]) + "\n)"
+        if "\n" in transformed_value:
+            return "\n " + transformed_value
+        return " " + transformed_value
 
     def validate(self, known_fields):
         errors = super().validate(known_fields)
@@ -1009,7 +993,9 @@ class Condition(Expression):
         self.right_hand = right_hand
 
     def __str__(self):
-        return "{} {} {}".format(self.value, self.predicate.upper(), self.right_hand)
+        return "{} {} {}".format(
+            transform(self.value), self.predicate.upper(), transform(self.right_hand)
+        )
 
     def __repr__(self):
         return "<Condition: {!r} {} {!r}>".format(
@@ -1035,9 +1021,30 @@ class BooleanCondition(Expression):
         self.type = type
         self.args = args
 
-    def __str__(self):
+    def transform(self, with_newline=False):
         join_str = " {} ".format(self.type.upper())
-        return join_str.join(map(str, self.args))
+        transformed_condition = join_str.join(map(transform, self.args))
+        if len(transformed_condition) < DEFAULT_LINE_LENGTH and with_newline is False:
+            return transformed_condition
+
+        join_str = "\n {} ".format(self.type.upper())
+        transformed_args = []
+        for a in self.args:
+            if isinstance(a, BooleanCondition):
+                transformed_a = a.transform(with_newline=True)
+            elif isinstance(a, Parenthesis):
+                transformed_a = transform(a.args[0])
+                if "\n" in transformed_a:
+                    transformed_a = (
+                        "(\n  " + transformed_a.replace("\n", "\n ") + "\n )"
+                    )
+                else:
+                    transformed_a = f"({transformed_a})"
+            else:
+                transformed_a = transform(a)
+            transformed_args.append(transformed_a)
+
+        return join_str.join(transformed_args)
 
     def __repr__(self):
         return "<BooleanCondition {}: {}>".format(
