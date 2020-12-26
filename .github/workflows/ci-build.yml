@@ -14,12 +14,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Set up Python 3.6
+      - name: Set up Python 3.7
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.7
       - name: Installing dependencies
-        run: python3.6 -m pip install black==20.8b1 mypy==0.790 flake8==3.8.4 isort==5.6.4
+        run: python3.7 -m pip install black==20.8b1 mypy==0.790 flake8==3.8.4 isort==5.6.4
 
       - name: Lint using flake8
         run: flake8 .
@@ -48,3 +48,28 @@ jobs:
       - name: Run tests for Python ${{ matrix.python-version }} using pytest
         run: pytest
 
+  coverage:
+    name: Generate coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install dependencies and pytest-cov
+        run: |
+          python -m pip install -e .[test]
+          python -m pip install pytest-cov
+      - name: Run test and generate coverage report
+        run: pytest --cov=./ --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: unittests
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true
+          verbose: true
