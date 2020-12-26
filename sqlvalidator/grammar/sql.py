@@ -831,6 +831,25 @@ class Addition(ArithmaticOperator):
         super().__init__("+", *args)
 
 
+class BitwiseOperation(Expression):
+    OPERATORS = ("&", "|", "^")
+
+    def __init__(self, expression, predicate, right_hand):
+        super().__init__(expression)
+        self.predicate = predicate
+        self.right_hand = right_hand
+
+    def __str__(self):
+        return "{} {} {}".format(
+            transform(self.value), self.predicate, transform(self.right_hand)
+        )
+
+    def __repr__(self):
+        return "<BitwiseOperation: {!r} {} {!r}>".format(
+            self.value, self.predicate, self.right_hand
+        )
+
+
 class Table(Expression):
     pass
 

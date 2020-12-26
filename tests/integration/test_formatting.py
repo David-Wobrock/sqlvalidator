@@ -1328,3 +1328,12 @@ SELECT
 FROM t;
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_bitwise_operation():
+    sql = "select field & 64 as col from t;"
+    expected = """
+SELECT field & 64 AS col
+FROM t;
+"""
+    assert format_sql(sql) == expected.strip()

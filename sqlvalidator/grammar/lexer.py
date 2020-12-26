@@ -2,6 +2,7 @@ from sqlvalidator.grammar.sql import (
     Alias,
     AnalyticsClause,
     ArithmaticOperator,
+    BitwiseOperation,
     Boolean,
     BooleanCondition,
     Case,
@@ -574,6 +575,10 @@ class ExpressionParser:
                 right_hand_right,
             )
             expression = Condition(expression, symbol, right_hand)
+        elif next_token in BitwiseOperation.OPERATORS:
+            operator = next_token
+            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            expression = BitwiseOperation(expression, operator, right_hand)
 
         if lower(next_token) in BooleanCondition.PREDICATES:
             left_hand = expression
