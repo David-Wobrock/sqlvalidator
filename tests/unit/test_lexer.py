@@ -19,6 +19,7 @@ from sqlvalidator.grammar.sql import (
     Integer,
     Join,
     LimitClause,
+    Null,
     OnClause,
     OrderByClause,
     OrderByItem,
@@ -710,5 +711,48 @@ GROUP BY f0_
         where_clause=WhereClause(Condition(Column("sq_1.last"), "=", Integer(1))),
         group_by_clause=GroupByClause(Column("f0_")),
         semi_colon=False,
+    )
+    assert actual == expected
+
+
+def test_boolean_condition_as_expression():
+    sql = "field is not null and col > 0"
+    actual = ExpressionParser.parse(to_tokens(sql))
+    expected = BooleanCondition(
+        "and",
+        Condition(
+            Column("field"),
+            "is not",
+            Null(),
+        ),
+        Condition(
+            Column("col"),
+            ">",
+            Integer(0),
+        ),
+    )
+    assert actual == expected
+
+
+def test_select_boolean_condition_expression():
+    sql = "select field is not null and col > 0 from t;"
+    actual = SQLStatementParser.parse(to_tokens(sql))
+    expected = SelectStatement(
+        expressions=[
+            BooleanCondition(
+                "and",
+                Condition(
+                    Column("field"),
+                    "is not",
+                    Null(),
+                ),
+                Condition(
+                    Column("col"),
+                    ">",
+                    Integer(0),
+                ),
+            )
+        ],
+        from_statement=Table("t"),
     )
     assert actual == expected

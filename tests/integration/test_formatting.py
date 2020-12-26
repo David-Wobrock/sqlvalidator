@@ -1317,3 +1317,14 @@ SELECT CAST(date AS DATE)
 FROM t;
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_select_boolean_condition_expression():
+    sql = "select field is not null and col > 0, x from t;"
+    expected = """
+SELECT
+ field IS NOT NULL AND col > 0,
+ x
+FROM t;
+"""
+    assert format_sql(sql) == expected.strip()
