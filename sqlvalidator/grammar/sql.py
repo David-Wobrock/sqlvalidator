@@ -462,6 +462,18 @@ class FunctionCall(Expression):
         )
 
 
+class CastFunctionCall(FunctionCall):
+    def __init__(self, column, cast_type):
+        super().__init__("cast", column, "AS", cast_type)
+
+    def __str__(self):
+        return "{}({} AS {})".format(
+            self.function_name.upper(),
+            transform(self.args[0]),
+            transform(self.args[2]),
+        )
+
+
 class AnalyticsClause(Expression):
     def __init__(self, function, partition_by, order_by, frame_clause):
         self.function = function
@@ -579,7 +591,7 @@ class Column(Expression):
 
 
 class Type(Expression):
-    VALUES = ("int", "float", "day", "month", "timestamp", "int64", "string")
+    VALUES = ("int", "float", "day", "month", "timestamp", "int64", "string", "date")
 
     def __str__(self):
         return self.value.upper()

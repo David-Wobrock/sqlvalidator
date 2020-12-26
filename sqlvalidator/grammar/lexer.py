@@ -5,6 +5,7 @@ from sqlvalidator.grammar.sql import (
     Boolean,
     BooleanCondition,
     Case,
+    CastFunctionCall,
     Column,
     CombinedQueries,
     Condition,
@@ -372,7 +373,7 @@ class OffsetClauseParser:
 
 class ExpressionListParser:
     @staticmethod
-    def parse(tokens):
+    def parse(tokens, can_be_type=False):
         next_token = next(tokens, None)
 
         expressions = []
@@ -386,7 +387,11 @@ class ExpressionListParser:
                 count_parenthesis -= 1
             next_token = next(tokens, None)
             if next_token is None or (next_token == "," and count_parenthesis == 0):
-                expressions.append(ExpressionParser.parse(iter(expression_tokens)))
+                expressions.append(
+                    ExpressionParser.parse(
+                        iter(expression_tokens), can_be_type=can_be_type
+                    )
+                )
                 expression_tokens = []
                 next_token = next(tokens, None)
         return expressions
@@ -394,7 +399,7 @@ class ExpressionListParser:
 
 class ExpressionParser:
     @staticmethod
-    def parse(tokens, is_right_hand=False):
+    def parse(tokens, is_right_hand=False, can_be_type=False):
         main_token = next(tokens)
         next_token = None
 
@@ -433,9 +438,23 @@ class ExpressionParser:
         # Expressions that need the next_token to be read
         if expression is None:
             if next_token is not None and next_token == "(":
-                argument_tokens = get_tokens_until_closing_parenthesis(tokens)
-                arguments = ExpressionListParser.parse(iter(argument_tokens))
-                expression = FunctionCall(main_token, *arguments)
+                if lower(main_token) == "cast":
+                    column_tokens, next_token = get_tokens_until_one_of(
+                        tokens, stop_words=["as"]
+                    )
+                    column, _ = ExpressionParser.parse(
+                        iter(column_tokens), is_right_hand=True
+                    )
+                    assert lower(next_token) == "as", next_token
+                    next_token = next(tokens)
+                    cast_type = Type(next_token)
+                    expression = CastFunctionCall(column, cast_type)
+                else:
+                    argument_tokens = get_tokens_until_closing_parenthesis(tokens)
+                    arguments = ExpressionListParser.parse(
+                        iter(argument_tokens), can_be_type=True
+                    )
+                    expression = FunctionCall(main_token, *arguments)
                 next_token = next(tokens, None)
             elif (
                 next_token is not None
@@ -445,7 +464,7 @@ class ExpressionParser:
                 rest_expression = ExpressionParser.parse(tokens)
                 expression = DatePartExtraction(main_token, rest_expression)
                 next_token = next(tokens, None)
-            elif lower(main_token) in Type.VALUES:
+            elif lower(main_token) in Type.VALUES and can_be_type:
                 expression = Type(main_token)
             elif next_token is not None and next_token == "[":
                 argument_tokens, next_token = get_tokens_until_one_of(

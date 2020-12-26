@@ -9,6 +9,7 @@ from sqlvalidator.grammar.sql import (
     Alias,
     AnalyticsClause,
     BooleanCondition,
+    CastFunctionCall,
     Column,
     Condition,
     ExceptClause,
@@ -65,8 +66,9 @@ def test_nested_date_functions():
         "DATE",
         FunctionCall(
             "TIMESTAMP_TRUNC",
-            FunctionCall(
-                "CAST", Alias(Column("a.date"), alias=Type("TIMESTAMP"), with_as=True)
+            CastFunctionCall(
+                Column("a.date"),
+                Type("TIMESTAMP"),
             ),
             Type("MONTH"),
         ),

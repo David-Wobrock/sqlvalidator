@@ -1308,3 +1308,12 @@ WHERE (
 )
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_cast_type():
+    sql = "select cast(date as date) from t;"
+    expected = """
+SELECT CAST(date AS DATE)
+FROM t;
+"""
+    assert format_sql(sql) == expected.strip()
