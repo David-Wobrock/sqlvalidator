@@ -1008,7 +1008,8 @@ class CombinedQueries(Expression):
 
 
 class OnClause(Expression):
-    pass
+    def __str__(self):
+        return transform(self.value)
 
 
 class UsingClause(Expression):

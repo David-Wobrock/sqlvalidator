@@ -673,6 +673,38 @@ USING (field)
     assert format_sql(sql) == expected.strip()
 
 
+def test_join_on_clause():
+    sql = """
+SELECT field
+FROM table JOIN (other_table) ON f1 = f2
+"""
+    expected = """
+SELECT field
+FROM table
+JOIN (
+ other_table
+)
+ON f1 = f2
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_join_on_clause_boolean():
+    sql = """
+SELECT field
+FROM table JOIN (other_table) ON f1 = f2 and f3=f4
+"""
+    expected = """
+SELECT field
+FROM table
+JOIN (
+ other_table
+)
+ON f1 = f2 AND f3 = f4
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_two_parenthesis_joins_with_group_by():
     sql = """
 SELECT avg(col), count(*)
