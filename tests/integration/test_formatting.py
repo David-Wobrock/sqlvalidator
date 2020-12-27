@@ -1443,3 +1443,14 @@ SELECT field
 FROM t1, UNNEST(t2);
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_having_boolean_clause():
+    sql = "select dim from t group by dim having sum(field) is not null and avg(col) > 0"
+    expected = """
+SELECT dim
+FROM t
+GROUP BY dim
+HAVING SUM(field) IS NOT NULL AND AVG(col) > 0
+"""
+    assert format_sql(sql) == expected.strip()

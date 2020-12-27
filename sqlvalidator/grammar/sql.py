@@ -295,6 +295,9 @@ class GroupByClause(Expression):
 
 
 class HavingClause(Expression):
+    def __str__(self):
+        return transform(self.value)
+
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
