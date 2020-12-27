@@ -1411,3 +1411,35 @@ SELECT field & 64 AS col
 FROM t;
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_cross_join():
+    sql = "select f1, f2 from t1 cross join t2;"
+    expected = """
+SELECT
+ f1,
+ f2
+FROM t1
+CROSS JOIN t2;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_implicit_cross_join():
+    sql = "select f1,f2 from t1, t2;"
+    expected = """
+SELECT
+ f1,
+ f2
+FROM t1, t2;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_implicit_cross_join_unnest():
+    sql = "select field from t1, unnest(t2);"
+    expected = """
+SELECT field
+FROM t1, UNNEST(t2);
+"""
+    assert format_sql(sql) == expected.strip()

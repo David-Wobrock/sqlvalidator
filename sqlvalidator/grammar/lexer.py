@@ -253,7 +253,7 @@ class FromStatementParser:
             elif lower(on_or_using) == "using":
                 expressions = ExpressionParser.parse(iter(expression_tokens))
                 using = UsingClause(expressions)
-            else:
+            elif join_type not in ("CROSS JOIN", ","):
                 raise ParsingError("Missing ON or USING for join")
 
             expression = Join(join_type, left_expr, right_expr, on=on, using=using)

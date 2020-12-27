@@ -883,7 +883,7 @@ class Unnest(Expression):
 
 
 class Join(Expression):
-    VALUES = ("join", "inner", "left", "right", "full", "cross", "outer")
+    VALUES = ("join", "inner", "left", "right", "full", "cross", "outer", ",")
 
     def __init__(self, join_type, left_from, right_from, on, using):
         self.join_type = join_type
@@ -958,15 +958,18 @@ class Join(Expression):
                 left_element, " AS" if alias.with_as else "", alias.alias
             )
 
-        join_str = "{}\n{}{}\n".format(
+        join_type_str = (
+            "\n{}".format(self.join_type.upper()) if self.join_type != "," else ","
+        )
+        join_str = "{}{}{}".format(
             left_element,
-            self.join_type.upper(),
+            join_type_str,
             right_element,
         )
         if self.on:
-            join_str += "ON {}".format(transform(self.on))
+            join_str += "\nON {}".format(transform(self.on))
         elif self.using:
-            join_str += "USING {}".format(transform(self.using))
+            join_str += "\nUSING {}".format(transform(self.using))
         return join_str
 
     def __eq__(self, other):
