@@ -25,12 +25,16 @@ def get_tokens_until_closing_parenthesis(tokens):
     return argument_tokens
 
 
-def get_tokens_until_one_of(tokens, stop_words, first_token=None):
+def get_tokens_until_one_of(tokens, stop_words, first_token=None, keep=None):
     argument_tokens = [first_token] if first_token is not None else []
+    keep = keep or []
+
     next_token = next(tokens, None)
     count_parenthesis = 0 if first_token != "(" else 1
     while next_token is not None and not (
-        lower(next_token) in stop_words and count_parenthesis <= 0
+        lower(next_token) in stop_words
+        and count_parenthesis <= 0
+        and (argument_tokens[-1], lower(next_token)) not in keep
     ):
         argument_tokens.append(next_token)
         if next_token == "(":

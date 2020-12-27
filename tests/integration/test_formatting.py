@@ -1128,6 +1128,48 @@ FROM table
     assert format_sql(sql) == expected.strip()
 
 
+def test_unnest_with_offset():
+    sql = "SELECT ARRAY( SELECT col from UNNEST(f_2) with offset ) FROM table;"
+    expected = """
+SELECT ARRAY(
+ SELECT col
+ FROM UNNEST(f_2) WITH OFFSET
+)
+FROM table;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_unnest_with_offset_alias():
+    sql = "SELECT ARRAY( SELECT a.col from UNNEST(f_2) as a with offset ) FROM table;"
+    expected = """
+SELECT ARRAY(
+ SELECT a.col
+ FROM UNNEST(f_2) AS a WITH OFFSET
+)
+FROM table;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_unnest_with_offset_both_aliased():
+    sql = """
+SELECT some_field f0,
+(SELECT SUM(IF(hh = structure.cq[SAFE_OFFSET(o)], 1, 0))
+FROM UNNEST(other_struct.cq) hh with offset o) * 100
+/ LEAST(other_struct.len, structure.len) f1 from table;"""
+    expected = """
+SELECT
+ some_field f0,
+ (
+  SELECT SUM(IF(hh = structure.cq[SAFE_OFFSET(o)], 1, 0))
+  FROM UNNEST(other_struct.cq) hh WITH OFFSET o
+ ) * 100 / LEAST(other_struct.len, structure.len) f1
+FROM table;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_function_calls():
     sql = "select SAFE_DIVIDE(SUM(SUM(met)) OVER (PARTITION BY ANY_VALUE(hash) ORDER BY SUM(met) DESC, ANY_VALUE(hash2) ASC) ,SUM(SUM(met)) OVER (PARTITION BY ANY_VALUE(hash))) from t group by hash3"  # noqa
     expected = """

@@ -854,6 +854,34 @@ class Table(Expression):
     pass
 
 
+class Unnest(Expression):
+    def __init__(self, unnest_expression, with_offset, with_offset_as, offset_alias):
+        # unnest_expression: can be functiion call or alias of function call
+        super().__init__(unnest_expression)
+        self.with_offset = with_offset
+        self.with_offset_as = with_offset_as
+        self.offset_alias = offset_alias
+
+    def __str__(self):
+        unnest_str = transform(self.value)
+        if self.with_offset:
+            unnest_str += " WITH OFFSET"
+            if self.offset_alias:
+                if self.with_offset_as:
+                    unnest_str += " AS"
+                unnest_str += f" {self.offset_alias}"
+        return unnest_str
+
+    def __eq__(self, other):
+        return (
+            (isinstance(other, type(self)) or isinstance(self, type(other)))
+            and self.value == other.value
+            and self.with_offset == other.with_offset
+            and self.with_offset_as == other.with_offset_as
+            and self.offset_alias == other.offset_alias
+        )
+
+
 class Join(Expression):
     VALUES = ("join", "inner", "left", "right", "full", "cross", "outer")
 

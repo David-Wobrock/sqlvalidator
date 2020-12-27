@@ -30,6 +30,7 @@ from sqlvalidator.grammar.sql import (
     String,
     Table,
     Type,
+    Unnest,
     UsingClause,
     WhereClause,
     WindowFrameClause,
@@ -88,7 +89,9 @@ class SelectStatementParser:
 
         if lower(next_token) == "from":
             expression_tokens, next_token = get_tokens_until_one_of(
-                tokens, ["where", "group", "having", "order", "limit", "offset", ";"]
+                tokens,
+                ["where", "group", "having", "order", "limit", "offset", ";"],
+                keep=[("with", "offset")],
             )
             from_statement = FromStatementParser.parse(iter(expression_tokens))
         else:
@@ -178,11 +181,7 @@ class FromStatementParser:
             expression = Table(StringParser.parse(tokens, next_token))
         else:
             if lower(next_token) == "unnest":
-                next_next_token = next(tokens)
-                assert next_next_token == "("
-                argument_tokens = get_tokens_until_closing_parenthesis(tokens)
-                arguments = ExpressionListParser.parse(iter(argument_tokens))
-                expression = FunctionCall(next_token, *arguments)
+                expression = UnnestParser.parse(tokens)
             else:
                 expression = Table(next_token)
 
@@ -277,6 +276,60 @@ class JoinTypeParser:
     def parse(tokens):
         # TODO: assert known join types
         return " ".join(tokens).upper()
+
+
+class UnnestParser:
+    @staticmethod
+    def parse(tokens):
+        next_token = next(tokens)
+        assert next_token == "("
+        argument_tokens = get_tokens_until_closing_parenthesis(tokens)
+        arguments = ExpressionListParser.parse(iter(argument_tokens))
+        expression = FunctionCall("unnest", *arguments)
+
+        next_token = next(tokens, None)
+        if (
+            next_token is not None
+            and lower(next_token) not in Join.VALUES
+            and lower(next_token) not in CombinedQueries.SET_OPERATORS
+            and lower(next_token) != "with"
+        ):
+            if lower(next_token) == "as":
+                with_as = True
+                alias = next(tokens)
+            else:
+                with_as = False
+                alias = next_token
+            expression = Alias(expression, alias, with_as)
+            next_token = next(tokens, None)
+
+        with_offset = False
+        with_offset_as = False
+        offset_alias = None
+
+        if lower(next_token) == "with":
+            next_token = next(tokens)
+            assert next_token == "offset"
+            with_offset = True
+
+            next_token = next(tokens, None)
+            if (
+                next_token is not None
+                and lower(next_token) not in Join.VALUES
+                and lower(next_token) not in CombinedQueries.SET_OPERATORS
+            ):
+                if lower(next_token) == "as":
+                    with_offset_as = True
+                    offset_alias = next(tokens)
+                else:
+                    offset_alias = next_token
+
+        return Unnest(
+            expression,
+            with_offset=with_offset,
+            with_offset_as=with_offset_as,
+            offset_alias=offset_alias,
+        )
 
 
 class SetOperatorTypeParser:
