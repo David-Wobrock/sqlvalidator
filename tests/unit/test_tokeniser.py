@@ -1,5 +1,6 @@
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_not_in,
+    get_tokens_until_one_of,
     split_with_sep,
     to_tokens,
 )
@@ -82,4 +83,30 @@ def test_keep_tokens_in_parenthesis():
     assert get_tokens_until_not_in(tokens, ["foo", "bar"]) == (
         ["foo"],
         "(",
+    )
+
+
+def test_get_tokens_until():
+    tokens = iter(["foo", "bar", "baz"])
+    assert get_tokens_until_one_of(tokens, ["bar"]) == (["foo"], "bar")
+
+
+def test_get_tokens_until_empty():
+    tokens = iter(["foo", "bar", "baz"])
+    assert get_tokens_until_one_of(tokens, []) == (["foo", "bar", "baz"], None)
+
+
+def test_get_tokens_until_with_first():
+    tokens = iter(["foo", "bar", "baz"])
+    assert get_tokens_until_one_of(tokens, ["bar"], first_token="fib") == (
+        ["fib", "foo"],
+        "bar",
+    )
+
+
+def test_get_tokens_until_with_keep():
+    tokens = iter(["foo", "with", "offset", "offset"])
+    assert get_tokens_until_one_of(tokens, ["offset"], keep=[("with", "offset")]) == (
+        ["foo", "with", "offset"],
+        "offset",
     )

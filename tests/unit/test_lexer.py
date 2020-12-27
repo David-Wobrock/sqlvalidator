@@ -28,6 +28,7 @@ from sqlvalidator.grammar.sql import (
     String,
     Table,
     Type,
+    Unnest,
     UsingClause,
     WhereClause,
     WindowFrameClause,
@@ -754,5 +755,89 @@ def test_select_boolean_condition_expression():
             )
         ],
         from_statement=Table("t"),
+    )
+    assert actual == expected
+
+
+def test_unnest():
+    sql = "unnest(table)"
+    actual = FromStatementParser.parse(to_tokens(sql))
+    expected = Unnest(
+        FunctionCall("unnest", Column("table")),
+        with_offset=False,
+        with_offset_as=False,
+        offset_alias=None,
+    )
+    assert actual == expected
+
+
+def test_unnest_with_alias():
+    sql = "unnest(table) t"
+    actual = FromStatementParser.parse(to_tokens(sql))
+    expected = Unnest(
+        Alias(FunctionCall("unnest", Column("table")), with_as=False, alias="t"),
+        with_offset=False,
+        with_offset_as=False,
+        offset_alias=None,
+    )
+    assert actual == expected
+
+
+def test_unnest_with_as_alias():
+    sql = "unnest(table) as t"
+    actual = FromStatementParser.parse(to_tokens(sql))
+    expected = Unnest(
+        Alias(FunctionCall("unnest", Column("table")), with_as=True, alias="t"),
+        with_offset=False,
+        with_offset_as=False,
+        offset_alias=None,
+    )
+    assert actual == expected
+
+
+def test_unnest_with_offset():
+    sql = "unnest(table) with offset"
+    actual = FromStatementParser.parse(to_tokens(sql))
+    expected = Unnest(
+        FunctionCall("unnest", Column("table")),
+        with_offset=True,
+        with_offset_as=False,
+        offset_alias=None,
+    )
+    assert actual == expected
+
+
+def test_unnest_with_offset_alias():
+    sql = "unnest(table) with offset o"
+    actual = FromStatementParser.parse(to_tokens(sql))
+    expected = Unnest(
+        FunctionCall("unnest", Column("table")),
+        with_offset=True,
+        with_offset_as=False,
+        offset_alias="o",
+    )
+    assert actual == expected
+
+
+def test_unnest_with_offset_as_alias():
+    sql = "unnest(table) with offset as o"
+    actual = FromStatementParser.parse(to_tokens(sql))
+    expected = Unnest(
+        FunctionCall("unnest", Column("table")),
+        with_offset=True,
+        with_offset_as=True,
+        offset_alias="o",
+    )
+    assert actual == expected
+
+
+def test_unnest_alias_with_offset_as_alias():
+    sql = "unnest(table) t with offset as o"
+    actual = FromStatementParser.parse(to_tokens(sql))
+    expected = Unnest(
+        Alias(FunctionCall("unnest", Column("table")), with_as=False, alias="t"),
+        with_offset=True,
+        with_offset_as=True,
+        offset_alias="o",
     )
     assert actual == expected
