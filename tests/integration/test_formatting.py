@@ -1446,7 +1446,9 @@ FROM t1, UNNEST(t2);
 
 
 def test_having_boolean_clause():
-    sql = "select dim from t group by dim having sum(field) is not null and avg(col) > 0"
+    sql = (
+        "select dim from t group by dim having sum(field) is not null and avg(col) > 0"
+    )
     expected = """
 SELECT dim
 FROM t

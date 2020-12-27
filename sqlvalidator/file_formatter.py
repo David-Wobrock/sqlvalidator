@@ -204,6 +204,8 @@ def format_dir(
                     total_changed_sql += changed_sql
                 except RecursionError:
                     print("could not format {}".format(abs_filename))
+                except Exception as e:
+                    print("error formatting {} ({})".format(abs_filename, e))
 
     return changed_files, total_changed_sql, seen_files
 
@@ -218,9 +220,17 @@ def handle_one_input(
     seen_files = seen_files or set()
 
     if os.path.isfile(src_input):
-        num_files, changed_sql, seen_files = format_file(
-            src_input, check_input, seen_files
-        )
+        try:
+            num_files, changed_sql, seen_files = format_file(
+                src_input, check_input, seen_files
+            )
+        except RecursionError:
+            print("could not format {}".format(src_input))
+            return 0, 0, set()
+        except Exception as e:
+            print("error formatting {} ({})".format(src_input, e))
+            return 0, 0, set()
+
     elif os.path.isdir(src_input):
         num_files, changed_sql, seen_files = format_dir(
             src_input, check_input, seen_files
