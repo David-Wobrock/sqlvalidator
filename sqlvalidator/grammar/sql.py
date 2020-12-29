@@ -1190,10 +1190,23 @@ class Case(Expression):
             case_str += " {}".format(transform(self.value))
 
         case_str += "\n "
-        case_str += "\n ".join(
-            "WHEN {} THEN {}".format(transform(when), transform(then))
-            for when, then in self.when_then
-        )
+        when_then_block_str = []
+        for when, then in self.when_then:
+            when_then_str = "WHEN"
+            transformed_when = transform(when)
+            if isinstance(when, Parenthesis) and "\n" in transformed_when:
+                when_then_str += (
+                    " (\n  " + transform(when.args[0]).replace("\n", "\n  ") + "\n )\n "
+                )
+            elif "\n" in transformed_when:
+                when_then_str += "\n  " + transformed_when.replace("\n", "\n  ") + "\n "
+            else:
+                when_then_str += " " + transformed_when + " "
+
+            when_then_str += f"THEN {then}"
+            when_then_block_str.append(when_then_str)
+
+        case_str += "\n ".join(when_then_block_str)
 
         if self.else_expression:
             case_str += "\n ELSE {}".format(transform(self.else_expression))

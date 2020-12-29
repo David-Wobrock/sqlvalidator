@@ -1520,3 +1520,57 @@ FROM (
 )
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_long_case_when_conditions_line_breaks():
+    sql = """
+select case when(the__very__long__integer__variable_that__is__tested >= 0 AND the__very__long__integer__variable_that__is__tested < 1000) THEN '0000_from_0_to_1000'
+   WHEN the__very__long__integer__variable_that__is__tested >= 1000 AND the__very__long__integer__variable_that__is__tested < 10000 THEN '0001_from_1000_to_10000'
+   WHEN the__very__long__integer__variable_that__is__tested >= 10000
+THEN '0002_from_10000_to_' end
+from t;
+"""  # noqa
+    expected = """
+SELECT CASE
+ WHEN (
+  the__very__long__integer__variable_that__is__tested >= 0
+  AND the__very__long__integer__variable_that__is__tested < 1000
+ )
+ THEN '0000_from_0_to_1000'
+ WHEN
+  the__very__long__integer__variable_that__is__tested >= 1000
+  AND the__very__long__integer__variable_that__is__tested < 10000
+ THEN '0001_from_1000_to_10000'
+ WHEN the__very__long__integer__variable_that__is__tested >= 10000 THEN '0002_from_10000_to_'
+END
+FROM t;
+"""  # noqa
+    assert format_sql(sql) == expected.strip()
+
+
+def test_long_case_when_conditions_line_breaks_multi_column():
+    sql = """
+select x, case when(the__very__long__integer__variable_that__is__tested >= 0 AND the__very__long__integer__variable_that__is__tested < 1000) THEN '0000_from_0_to_1000'
+   WHEN the__very__long__integer__variable_that__is__tested >= 1000 AND the__very__long__integer__variable_that__is__tested < 10000 THEN '0001_from_1000_to_10000'
+   WHEN the__very__long__integer__variable_that__is__tested >= 10000
+THEN '0002_from_10000_to_' end
+from t;
+"""  # noqa
+    expected = """
+SELECT
+ x,
+ CASE
+  WHEN (
+   the__very__long__integer__variable_that__is__tested >= 0
+   AND the__very__long__integer__variable_that__is__tested < 1000
+  )
+  THEN '0000_from_0_to_1000'
+  WHEN
+   the__very__long__integer__variable_that__is__tested >= 1000
+   AND the__very__long__integer__variable_that__is__tested < 10000
+  THEN '0001_from_1000_to_10000'
+  WHEN the__very__long__integer__variable_that__is__tested >= 10000 THEN '0002_from_10000_to_'
+ END
+FROM t;
+"""  # noqa
+    assert format_sql(sql) == expected.strip()
