@@ -503,6 +503,8 @@ class ExpressionParser:
                     next_token = next(tokens)
                     cast_type = Type(next_token)
                     expression = CastFunctionCall(column, cast_type)
+                    next_token = next(tokens)
+                    assert lower(next_token) == ")", next_token
                 else:
                     argument_tokens = get_tokens_until_closing_parenthesis(tokens)
                     arguments = ExpressionListParser.parse(

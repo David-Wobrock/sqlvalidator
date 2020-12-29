@@ -1393,6 +1393,18 @@ FROM t;
     assert format_sql(sql) == expected.strip()
 
 
+def test_cast_in_condition():
+    sql = (
+        "select * from t where CAST(Date AS DaTe) between '2020-01-01' AND '2020-02-01'"
+    )
+    expected = """
+SELECT *
+FROM t
+WHERE CAST(Date AS DATE) BETWEEN '2020-01-01' AND '2020-02-01'
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_select_boolean_condition_expression():
     sql = "select field is not null and col > 0, x from t;"
     expected = """
