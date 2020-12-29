@@ -110,3 +110,11 @@ def test_get_tokens_until_with_keep():
         ["foo", "with", "offset"],
         "offset",
     )
+
+
+def test_get_tokens_until_with_keep_capitalised():
+    tokens = iter(["foo", "WITH", "offset", "offset"])
+    assert get_tokens_until_one_of(tokens, ["offset"], keep=[("with", "offset")]) == (
+        ["foo", "WITH", "offset"],
+        "offset",
+    )

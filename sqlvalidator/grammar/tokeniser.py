@@ -34,7 +34,7 @@ def get_tokens_until_one_of(tokens, stop_words, first_token=None, keep=None):
     while next_token is not None and not (
         lower(next_token) in stop_words
         and count_parenthesis <= 0
-        and (argument_tokens[-1], lower(next_token)) not in keep
+        and (lower(argument_tokens[-1]), lower(next_token)) not in keep
     ):
         argument_tokens.append(next_token)
         if next_token == "(":

@@ -1193,7 +1193,7 @@ def test_unnest_with_offset_both_aliased():
     sql = """
 SELECT some_field f0,
 (SELECT SUM(IF(hh = structure.cq[SAFE_OFFSET(o)], 1, 0))
-FROM UNNEST(other_struct.cq) hh with offset o) * 100
+FROM UNNEST(other_struct.cq) hh WITH offset o) * 100
 / LEAST(other_struct.len, structure.len) f1 from table;"""
     expected = """
 SELECT
