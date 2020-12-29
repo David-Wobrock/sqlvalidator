@@ -309,7 +309,7 @@ class UnnestParser:
 
         if lower(next_token) == "with":
             next_token = next(tokens)
-            assert next_token == "offset"
+            assert lower(next_token) == "offset", next_token
             with_offset = True
 
             next_token = next(tokens, None)
