@@ -172,7 +172,8 @@ def format_file(
     with open(filename, "r") as file:
         count_changed_sql, new_content = get_formatted_file_content(file)
 
-    if count_changed_sql > 0:
+    file_changed = count_changed_sql > 0
+    if file_changed:
         if not check:
             with open(filename, "w") as f:
                 f.write(new_content)
@@ -184,7 +185,8 @@ def format_file(
             "{} {} ({} changed SQL)".format(starting_text, filename, count_changed_sql)
         )
 
-    return 1, count_changed_sql, seen_files
+    num_changed_files = 1 if file_changed else 0
+    return num_changed_files, count_changed_sql, seen_files
 
 
 def format_dir(
