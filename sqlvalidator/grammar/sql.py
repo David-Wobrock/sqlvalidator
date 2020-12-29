@@ -89,7 +89,7 @@ class SelectStatement:
             statement_str += "\nGROUP BY{}".format(transform(self.group_by_clause))
 
         if self.having_clause:
-            statement_str += "\nHAVING {}".format(transform(self.having_clause))
+            statement_str += "\nHAVING{}".format(transform(self.having_clause))
 
         if self.order_by_clause:
             statement_str += "\nORDER BY{}".format(transform(self.order_by_clause))
@@ -296,7 +296,12 @@ class GroupByClause(Expression):
 
 class HavingClause(Expression):
     def __str__(self):
-        return transform(self.value)
+        transformed_value = transform(self.value)
+        if isinstance(self.value, Parenthesis) and "\n" in transformed_value:
+            return " (\n " + transform(self.value.args[0]).replace("\n", "\n ") + "\n)"
+        if "\n" in transformed_value:
+            return "\n " + transformed_value.replace("\n", "\n ")
+        return " " + transformed_value
 
     def validate(self, known_fields):
         errors = super().validate(known_fields)
