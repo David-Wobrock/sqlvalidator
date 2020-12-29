@@ -689,6 +689,43 @@ ON f1 = f2
     assert format_sql(sql) == expected.strip()
 
 
+def test_join_long_on_clause():
+    sql = """
+SELECT field
+FROM table JOIN (other_table) ON the__first__very__long__field__name__to__join = the__second__very__long__field__name__to__join and f1 = f2
+"""  # noqa
+    expected = """
+SELECT field
+FROM table
+JOIN (
+ other_table
+)
+ON
+ the__first__very__long__field__name__to__join = the__second__very__long__field__name__to__join
+ AND f1 = f2
+"""  # noqa
+    assert format_sql(sql) == expected.strip()
+
+
+def test_join_long_on_clause_with_parenthesis():
+    sql = """
+SELECT field
+FROM table JOIN (other_table) ON (the__first__very__long__field__name__to__join = the__second__very__long__field__name__to__join and (f1 = f2))
+"""  # noqa
+    expected = """
+SELECT field
+FROM table
+JOIN (
+ other_table
+)
+ON (
+ the__first__very__long__field__name__to__join = the__second__very__long__field__name__to__join
+ AND (f1 = f2)
+)
+"""  # noqa
+    assert format_sql(sql) == expected.strip()
+
+
 def test_join_on_clause_boolean():
     sql = """
 SELECT field

@@ -975,9 +975,9 @@ class Join(Expression):
             right_element,
         )
         if self.on:
-            join_str += "\nON {}".format(transform(self.on))
+            join_str += "\nON{}".format(transform(self.on))
         elif self.using:
-            join_str += "\nUSING {}".format(transform(self.using))
+            join_str += "\nUSING{}".format(transform(self.using))
         return join_str
 
     def __eq__(self, other):
@@ -1048,11 +1048,22 @@ class CombinedQueries(Expression):
 
 class OnClause(Expression):
     def __str__(self):
-        return transform(self.value)
+        transformed_value = transform(self.value)
+        if isinstance(self.value, Parenthesis) and "\n" in transformed_value:
+            return " (\n " + transform(self.value.args[0]).replace("\n", "\n ") + "\n)"
+        if "\n" in transformed_value:
+            return "\n " + transformed_value.replace("\n", "\n ")
+        return " " + transformed_value
 
 
 class UsingClause(Expression):
-    pass
+    def __str__(self):
+        transformed_value = transform(self.value)
+        if isinstance(self.value, Parenthesis) and "\n" in transformed_value:
+            return " (\n " + transform(self.value.args[0]).replace("\n", "\n ") + "\n)"
+        if "\n" in transformed_value:
+            return "\n " + transformed_value.replace("\n", "\n ")
+        return " " + transformed_value
 
 
 class Condition(Expression):
