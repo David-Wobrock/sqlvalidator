@@ -1611,3 +1611,18 @@ SELECT
 FROM t;
 """  # noqa
     assert format_sql(sql) == expected.strip()
+
+
+def test_where_in_subquery():
+    sql = "select * from t where id in (select id from other_t where field <> 0);"
+    expected = """
+SELECT *
+FROM t
+WHERE
+ id IN (
+  SELECT id
+  FROM other_t
+  WHERE field <> 0
+ );
+"""
+    assert format_sql(sql) == expected.strip()
