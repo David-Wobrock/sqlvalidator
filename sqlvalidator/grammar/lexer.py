@@ -507,8 +507,11 @@ class ExpressionParser:
                     assert lower(next_token) == ")", next_token
                 else:
                     argument_tokens = get_tokens_until_closing_parenthesis(tokens)
+                    arguments_can_be_type = (
+                        False if lower(main_token) == "date" else True
+                    )
                     arguments = ExpressionListParser.parse(
-                        iter(argument_tokens), can_be_type=True
+                        iter(argument_tokens), can_be_type=arguments_can_be_type
                     )
                     expression = FunctionCall(main_token, *arguments)
                 next_token = next(tokens, None)

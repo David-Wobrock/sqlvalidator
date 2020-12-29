@@ -1405,6 +1405,15 @@ WHERE CAST(Date AS DATE) BETWEEN '2020-01-01' AND '2020-02-01'
     assert format_sql(sql) == expected.strip()
 
 
+def test_date_function():
+    sql = "select date(date) from t"
+    expected = """
+SELECT DATE(date)
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_select_boolean_condition_expression():
     sql = "select field is not null and col > 0, x from t;"
     expected = """
