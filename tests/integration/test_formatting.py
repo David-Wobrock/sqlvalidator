@@ -1486,3 +1486,37 @@ SELECT IF(DATE(date) = '2020-01-01', 1, 0)
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_long_nested_where():
+    sql = """
+select * from (
+select f from table
+  WHERE EXISTS( SELECT 1 FROM UNNEST(long__field__name__multiple__array) AS a WHERE a LIKE '%Travel%' )
+   AND STARTS_WITH(the_second_keyword, 'travel')
+   AND ( ENDS_WITH(the_first_keyword, 'paris') OR EXISTS( SELECT 1 FROM UNNEST(long__field__name__multiple__array) AS a WHERE a LIKE '%Travel in Paris%' ) )
+)
+"""  # noqa
+    expected = """
+SELECT *
+FROM (
+ SELECT f
+ FROM table
+ WHERE
+  EXISTS(
+   SELECT 1
+   FROM UNNEST(long__field__name__multiple__array) AS a
+   WHERE a LIKE '%Travel%'
+  )
+  AND STARTS_WITH(the_second_keyword, 'travel')
+  AND (
+   ENDS_WITH(the_first_keyword, 'paris')
+   OR EXISTS(
+    SELECT 1
+    FROM UNNEST(long__field__name__multiple__array) AS a
+    WHERE a LIKE '%Travel in Paris%'
+   )
+  )
+)
+"""
+    assert format_sql(sql) == expected.strip()

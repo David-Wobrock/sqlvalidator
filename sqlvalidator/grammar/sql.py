@@ -227,9 +227,9 @@ class WhereClause(Expression):
     def transform(self):
         transformed_value = transform(self.value)
         if isinstance(self.value, Parenthesis) and "\n" in transformed_value:
-            return " (\n " + transform(self.value.args[0]) + "\n)"
+            return " (\n " + transform(self.value.args[0]).replace("\n", "\n ") + "\n)"
         if "\n" in transformed_value:
-            return "\n " + transformed_value
+            return "\n " + transformed_value.replace("\n", "\n ")
         return " " + transformed_value
 
     def validate(self, known_fields):
@@ -1093,7 +1093,7 @@ class BooleanCondition(Expression):
         if len(transformed_condition) < DEFAULT_LINE_LENGTH and with_newline is False:
             return transformed_condition
 
-        join_str = "\n {} ".format(self.type.upper())
+        join_str = "\n{} ".format(self.type.upper())
         transformed_args = []
         for a in self.args:
             if isinstance(a, BooleanCondition):
@@ -1101,9 +1101,7 @@ class BooleanCondition(Expression):
             elif isinstance(a, Parenthesis):
                 transformed_a = transform(a.args[0])
                 if "\n" in transformed_a:
-                    transformed_a = (
-                        "(\n  " + transformed_a.replace("\n", "\n ") + "\n )"
-                    )
+                    transformed_a = "(\n " + transformed_a.replace("\n", "\n ") + "\n)"
                 else:
                     transformed_a = f"({transformed_a})"
             else:
