@@ -1477,3 +1477,12 @@ GROUP BY dim
 HAVING SUM(field) IS NOT NULL AND AVG(col) > 0
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_if_with_date_column_name():
+    sql = "select if(date(date) = '2020-01-01', 1, 0) from t"
+    expected = """
+SELECT IF(DATE(date) = '2020-01-01', 1, 0)
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()

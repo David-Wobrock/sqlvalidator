@@ -508,7 +508,7 @@ class ExpressionParser:
                 else:
                     argument_tokens = get_tokens_until_closing_parenthesis(tokens)
                     arguments_can_be_type = (
-                        False if lower(main_token) == "date" else True
+                        "," in argument_tokens or lower(main_token) == "if"
                     )
                     arguments = ExpressionListParser.parse(
                         iter(argument_tokens), can_be_type=arguments_can_be_type
