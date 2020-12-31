@@ -1626,3 +1626,12 @@ WHERE
  );
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_table_in_square_brackets():
+    sql = "select * from [complex.table.name];"
+    expected = """
+SELECT *
+FROM [complex.table.name];
+"""
+    assert format_sql(sql) == expected.strip()

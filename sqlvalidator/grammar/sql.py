@@ -859,7 +859,15 @@ class BitwiseOperation(Expression):
 
 
 class Table(Expression):
-    pass
+    def __init__(self, value, in_square_brackets=False):
+        super().__init__(value)
+        self.in_square_brackets = in_square_brackets
+
+    def __str__(self):
+        table_str = super().__str__()
+        if self.in_square_brackets:
+            table_str = f"[{table_str}]"
+        return table_str
 
 
 class Unnest(Expression):

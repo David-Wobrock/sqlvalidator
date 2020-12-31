@@ -179,6 +179,14 @@ class FromStatementParser:
             expression = Parenthesis(argument)
         elif next_token == "'" or next_token == '"' or next_token == "`":
             expression = Table(StringParser.parse(tokens, next_token))
+        elif next_token == "[":
+            argument_tokens, next_token = get_tokens_until_one_of(
+                tokens, stop_words=["]"]
+            )
+            expression = Table(
+                ExpressionParser.parse(iter(argument_tokens)), in_square_brackets=True
+            )
+            assert next_token == "]", next_token
         else:
             if lower(next_token) == "unnest":
                 expression = UnnestParser.parse(tokens)
