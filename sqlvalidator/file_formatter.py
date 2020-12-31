@@ -91,7 +91,11 @@ def format_sql_string(sql_string):
 
 
 def is_select_string(token_value: str) -> bool:
-    return token_value.lower().lstrip(" \n'\"`ufbr").startswith("select")
+    cleaned_value = token_value.lower().lstrip(" \n'\"`ufbr")
+    lines = cleaned_value.splitlines()
+    if not lines:
+        return False
+    return lines[0].split(" ", maxsplit=1)[0] == "select"
 
 
 def get_formatted_file_content(file: IO) -> Tuple[int, str]:

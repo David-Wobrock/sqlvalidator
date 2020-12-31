@@ -91,3 +91,11 @@ def test_two_following_statements_both_no_format():
     num_changed_sql, new_content = file_formatter.get_formatted_file_content(input_file)
     assert num_changed_sql == 0
     assert new_content == file_content
+
+
+def test_string_starting_with_selected():
+    file_content = "'selected string'"
+    input_file = StringIO(file_content)
+    num_changed_sql, new_content = file_formatter.get_formatted_file_content(input_file)
+    assert num_changed_sql == 0
+    assert new_content == file_content
