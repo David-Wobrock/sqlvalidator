@@ -10,6 +10,7 @@ from sqlvalidator.grammar.sql import (
     AnalyticsClause,
     BooleanCondition,
     CastFunctionCall,
+    ChainedColumns,
     Column,
     Condition,
     ExceptClause,
@@ -62,14 +63,14 @@ def test_nested_functions():
 
 def test_nested_date_functions():
     actual = ExpressionParser.parse(
-        to_tokens("DATE(TIMESTAMP_TRUNC(CAST(a.date AS TIMESTAMP), MONTH))")
+        to_tokens("DATE(TIMESTAMP_TRUNC(CAST(date AS TIMESTAMP), MONTH))")
     )
     expected = FunctionCall(
         "DATE",
         FunctionCall(
             "TIMESTAMP_TRUNC",
             CastFunctionCall(
-                Column("a.date"),
+                Column("date"),
                 Type("TIMESTAMP"),
             ),
             Type("MONTH"),
@@ -171,7 +172,7 @@ def test_from_subquery():
     expected = Parenthesis(
         SelectStatement(
             expressions=[Column("field")],
-            from_statement=Table("table_stmt"),
+            from_statement=Table(Column("table_stmt")),
             semi_colon=False,
         )
     )
@@ -355,7 +356,7 @@ def test_order_by_clause():
     actual = SQLStatementParser.parse(to_tokens("SELECT col FROM t ORDER BY col, 2"))
     expected = SelectStatement(
         expressions=[Column("col")],
-        from_statement=Table("t"),
+        from_statement=Table(Column("t")),
         order_by_clause=OrderByClause(
             OrderByItem(Column("col")), OrderByItem(Integer(2))
         ),
@@ -392,7 +393,7 @@ def test_subquery():
                 expressions=[
                     Alias(FunctionCall("count", Column("*")), "col", with_as=False)
                 ],
-                from_statement=Table("table"),
+                from_statement=Table(Column("table")),
                 group_by_clause=GroupByClause(Column("x")),
                 semi_colon=False,
             )
@@ -504,7 +505,11 @@ GROUP BY f0_
     expected = SelectStatement(
         expressions=[
             Alias(
-                FunctionCall("COALESCE", Column("sq_1.col"), Column("sq_2.col")),
+                FunctionCall(
+                    "COALESCE",
+                    ChainedColumns(Column("sq_1"), Column("col")),
+                    ChainedColumns(Column("sq_2"), Column("col")),
+                ),
                 "f0_",
                 with_as=False,
             )
@@ -706,10 +711,18 @@ GROUP BY f0_
                 "sq_2",
                 with_as=False,
             ),
-            on=OnClause(Condition(Column("sq_1.hash"), "=", Column("sq_2.hash"))),
+            on=OnClause(
+                Condition(
+                    ChainedColumns(Column("sq_1"), Column("hash")),
+                    "=",
+                    ChainedColumns(Column("sq_2"), Column("hash")),
+                )
+            ),
             using=None,
         ),
-        where_clause=WhereClause(Condition(Column("sq_1.last"), "=", Integer(1))),
+        where_clause=WhereClause(
+            Condition(ChainedColumns(Column("sq_1"), Column("last")), "=", Integer(1))
+        ),
         group_by_clause=GroupByClause(Column("f0_")),
         semi_colon=False,
     )
@@ -754,7 +767,7 @@ def test_select_boolean_condition_expression():
                 ),
             )
         ],
-        from_statement=Table("t"),
+        from_statement=Table(Column("t")),
     )
     assert actual == expected
 
@@ -839,5 +852,33 @@ def test_unnest_alias_with_offset_as_alias():
         with_offset=True,
         with_offset_as=True,
         offset_alias="o",
+    )
+    assert actual == expected
+
+
+def test_simple_chained_field():
+    actual = ExpressionParser.parse(to_tokens("table.field"))
+    expected = ChainedColumns(Column("table"), Column("field"))
+    assert actual == expected
+
+
+def test_chained_field():
+    actual = ExpressionParser.parse(
+        to_tokens("table.field[offset(0)].subfield[offset(0)]")
+    )
+    expected = ChainedColumns(
+        Column("table"),
+        ChainedColumns(
+            Index(Column("field"), [FunctionCall("offset", Integer(0))]),
+            Index(Column("subfield"), [FunctionCall("offset", Integer(0))]),
+        ),
+    )
+    assert actual == expected
+
+
+def test_aliased_table():
+    actual = FromStatementParser.parse(to_tokens("table as sq_1"))
+    expected = Table(
+        Alias(Column("table"), with_as=True, alias=Column("sq_1")),
     )
     assert actual == expected

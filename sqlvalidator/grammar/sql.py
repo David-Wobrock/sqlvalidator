@@ -602,6 +602,24 @@ class Column(Expression):
         return errors
 
 
+class ChainedColumns(Expression):
+    def __init__(self, *args):
+        self.columns = args
+
+    def __str__(self):
+        return ".".join(map(transform, self.columns))
+
+    def __repr__(self):
+        return "<ChainedColumns: {}>".format(".".join(map(repr, self.columns)))
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and len(self.columns) == len(other.columns)
+            and all(a == o for a, o in zip(self.columns, other.columns))
+        )
+
+
 class Type(Expression):
     VALUES = ("int", "float", "day", "month", "timestamp", "int64", "string", "date")
 
@@ -764,6 +782,24 @@ class Parenthesis(Expression):
             return a.return_type
 
 
+class Array(Expression):
+    def __init__(self, *args):
+        self.args = args
+
+    def __str__(self):
+        return "[{}]".format(", ".join(map(transform, self.args)))
+
+    def __repr__(self):
+        return "<Array: {}>".format(", ".join(map(repr, self.args)))
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and len(self.args) == len(other.args)
+            and all(a == o for a, o in zip(self.args, other.args))
+        )
+
+
 class Alias(Expression):
     def __init__(self, expression, alias, with_as):
         self.expression = expression
@@ -868,7 +904,7 @@ class Table(Expression):
         self.in_square_brackets = in_square_brackets
 
     def __str__(self):
-        table_str = super().__str__()
+        table_str = transform(self.value)
         if self.in_square_brackets:
             table_str = f"[{table_str}]"
         return table_str

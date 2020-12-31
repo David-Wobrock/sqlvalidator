@@ -1666,3 +1666,43 @@ FROM (
 )
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_array():
+    sql = "select [f1, 'x', f2] from t"
+    expected = """
+SELECT [f1, 'x', f2]
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_chained_field():
+    sql = "select namespace.complex_array[offset(3)].SomeStuff[offset(3)] from t"
+    expected = """
+SELECT namespace.complex_array[OFFSET(3)].SomeStuff[OFFSET(3)]
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_multiple_table_name_with_cross_join():
+    sql = "select * from x.y.z, a.b.c"
+    expected = """
+SELECT *
+FROM x.y.z, a.b.c
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_multiple_table_name_with_multiple_joins():
+    sql = "select * from x.y.z, a.b.c join i.j using (k) left join t on p=l;"
+    expected = """
+SELECT *
+FROM x.y.z, a.b.c
+JOIN i.j
+USING (k)
+LEFT JOIN t
+ON p = l;
+"""
+    assert format_sql(sql) == expected.strip()

@@ -2,7 +2,22 @@ from typing import Optional
 
 STRING_SPLIT_TOKENS = ("'", '"', "`")
 WHITESPACE_SPLIT_TOKENS = (" ", "\n")
-KEPT_SPLIT_TOKENS = (",", ";", "(", ")", "[", "]", "+", "-", "*", "/", "=", "<", ">")
+KEPT_SPLIT_TOKENS = (
+    ",",
+    ";",
+    "(",
+    ")",
+    "[",
+    "]",
+    "+",
+    "-",
+    "*",
+    "/",
+    "=",
+    "<",
+    ">",
+    ".",
+)
 MERGE_TOKENS = ("<>", "<=", ">=")
 
 
@@ -31,9 +46,11 @@ def get_tokens_until_one_of(tokens, stop_words, first_token=None, keep=None):
 
     next_token = next(tokens, None)
     count_parenthesis = 0 if first_token != "(" else 1
+    count_square_brackets = 0 if first_token != "[" else 1
     while next_token is not None and not (
         lower(next_token) in stop_words
         and count_parenthesis <= 0
+        and count_square_brackets <= 0
         and (lower(argument_tokens[-1]), lower(next_token)) not in keep
     ):
         argument_tokens.append(next_token)
@@ -41,6 +58,10 @@ def get_tokens_until_one_of(tokens, stop_words, first_token=None, keep=None):
             count_parenthesis += 1
         elif next_token == ")":
             count_parenthesis -= 1
+        elif next_token == "[":
+            count_square_brackets += 1
+        elif next_token == "]":
+            count_square_brackets -= 1
         next_token = next(tokens, None)
 
     return argument_tokens, next_token

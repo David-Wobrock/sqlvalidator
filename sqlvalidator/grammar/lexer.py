@@ -2,11 +2,13 @@ from sqlvalidator.grammar.sql import (
     Alias,
     AnalyticsClause,
     ArithmaticOperator,
+    Array,
     BitwiseOperation,
     Boolean,
     BooleanCondition,
     Case,
     CastFunctionCall,
+    ChainedColumns,
     Column,
     CombinedQueries,
     Condition,
@@ -177,8 +179,10 @@ class FromStatementParser:
             except ParsingError:
                 argument = FromStatementParser.parse(iter(argument_tokens))
             expression = Parenthesis(argument)
+            next_token = next(tokens, None)
         elif next_token == "'" or next_token == '"' or next_token == "`":
             expression = Table(StringParser.parse(tokens, next_token))
+            next_token = next(tokens, None)
         elif next_token == "[":
             argument_tokens, next_token = get_tokens_until_one_of(
                 tokens, stop_words=["]"]
@@ -187,13 +191,19 @@ class FromStatementParser:
                 ExpressionParser.parse(iter(argument_tokens)), in_square_brackets=True
             )
             assert next_token == "]", next_token
+            next_token = next(tokens, None)
         else:
             if lower(next_token) == "unnest":
                 expression = UnnestParser.parse(tokens)
+                next_token = next(tokens, None)
             else:
-                expression = Table(next_token)
+                argument_tokens, next_token = get_tokens_until_one_of(
+                    tokens,
+                    stop_words=Join.VALUES + CombinedQueries.SET_OPERATORS,
+                    first_token=next_token,
+                )
+                expression = Table(ExpressionParser.parse(iter(argument_tokens)))
 
-        next_token = next(tokens, None)
         if (
             next_token is not None
             and lower(next_token) not in Join.VALUES
@@ -244,9 +254,13 @@ class FromStatementParser:
                 tokens, Join.VALUES, first_token=next_token
             )
             join_type = JoinTypeParser.parse(iter(expression_tokens))
-            expression_tokens, next_token = get_tokens_until_one_of(
-                tokens, ("on", "using"), first_token=next_token
-            )
+
+            if join_type in ("CROSS JOIN", ","):
+                expression_tokens, next_token = [next_token] + list(tokens), None
+            else:
+                expression_tokens, next_token = get_tokens_until_one_of(
+                    tokens, ("on", "using"), first_token=next_token
+                )
             right_expr = FromStatementParser.parse(iter(expression_tokens))
             on = None
             using = None
@@ -441,14 +455,24 @@ class ExpressionListParser:
         expressions = []
         expression_tokens = []
         count_parenthesis = 0
+        count_square_brackets = 0
         while next_token is not None:
             expression_tokens.append(next_token)
             if next_token == "(":
                 count_parenthesis += 1
             elif next_token == ")":
                 count_parenthesis -= 1
+            elif next_token == "[":
+                count_square_brackets += 1
+            elif next_token == "]":
+                count_square_brackets -= 1
+
             next_token = next(tokens, None)
-            if next_token is None or (next_token == "," and count_parenthesis == 0):
+            if next_token is None or (
+                next_token == ","
+                and count_parenthesis == 0
+                and count_square_brackets == 0
+            ):
                 expressions.append(
                     ExpressionParser.parse(
                         iter(expression_tokens), can_be_type=can_be_type
@@ -482,6 +506,14 @@ class ExpressionParser:
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             arguments = ExpressionListParser.parse(iter(argument_tokens))
             expression = Parenthesis(*arguments)
+        elif main_token == "[":
+            argument_tokens, next_token = get_tokens_until_one_of(
+                tokens, stop_words=["]"]
+            )
+            assert next_token == "]", next_token
+            arguments = ExpressionListParser.parse(iter(argument_tokens))
+            expression = Array(*arguments)
+            next_token = next(tokens, None)
         elif lower(main_token) == "case":
             argument_tokens, next_token = get_tokens_until_one_of(tokens, ["end"])
             assert lower(next_token) == "end"
@@ -607,6 +639,10 @@ class ExpressionParser:
             symbol = next_token
             right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
             expression = ArithmaticOperator(symbol, left_hand, right_hand)
+
+        if next_token == ".":
+            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            expression = ChainedColumns(expression, right_hand)
 
         if is_right_hand:
             return expression, next_token

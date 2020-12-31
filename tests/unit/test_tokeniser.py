@@ -73,6 +73,11 @@ def test_index():
     assert list(to_tokens(value)) == ["x", "[", "3", "]"]
 
 
+def test_chained_columns():
+    value = "x.y.z"
+    assert list(to_tokens(value)) == ["x", ".", "y", ".", "z"]
+
+
 def test_keep_tokens_in():
     tokens = iter(["foo", "bar", "baz"])
     assert get_tokens_until_not_in(tokens, ["foo", "bar"]) == (["foo", "bar"], "baz")
