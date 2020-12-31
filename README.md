@@ -15,7 +15,7 @@ SQL queries formatting, syntactic and semantic validation
 _sql.py_
 ```
 def fun():
-    return "select col1, column2 from table"  # sqlformat
+    return "select col1, column2 from table"
 ```
 
 Command line:
@@ -33,12 +33,11 @@ SELECT
  col1,
  column2
 FROM table
-"""  # sqlformat
+"""
 
 ```
 
-The `sqlformat` comment is required to indicated to `sqlvalidator` that this string is a SQL statement
-and should be formatted.
+A `nosqlformat` comment can be appended to indicate to `sqlvalidator` that this string should not be formatted.
 
 
 ### Check SQL format

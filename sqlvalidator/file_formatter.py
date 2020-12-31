@@ -5,7 +5,7 @@ from typing import IO, List, Optional, Set, Tuple
 
 from . import sql_formatter
 
-SQLFORMAT_COMMENT = "sqlformat"
+NO_SQLFORMAT_COMMENT = "nosqlformat"
 
 POSSIBLE_QUOTES = ('"""', "'''", '"', "'")
 STRING_PREFIXES = (
@@ -90,6 +90,10 @@ def format_sql_string(sql_string):
     return quoted_sql
 
 
+def is_select_string(token_value: str) -> bool:
+    return token_value.lower().lstrip(" \n'\"`ufbr").startswith("select")
+
+
 def get_formatted_file_content(file: IO) -> Tuple[int, str]:
     count_changed_sql = 0
     tokens = []
@@ -100,19 +104,31 @@ def get_formatted_file_content(file: IO) -> Tuple[int, str]:
         nonlocal tokens
         nonlocal count_changed_sql
 
-        following_tokens = []
+        if not is_select_string(token_value):
+            tokens.append((token_type, token_value, starting, ending, line))
+            return
 
-        # Find if the next comment without a string in-between
+        following_tokens = []
+        # Find if the next comment without a string in-between if there is one
         next_token, next_token_value, next_starting, next_ending, next_line = next(
             token_generator, (None, None, None, None, None)
         )
         if next_token is None:
-            tokens.append((token_type, token_value, starting, ending, line))
+            formatted_sql = format_sql_string(token_value)
+            tokens.append((token_type, formatted_sql, starting, ending, line))
+            tokens += following_tokens
+            if formatted_sql != token_value:
+                count_changed_sql += 1
             return
+
         following_tokens.append(
             (next_token, next_token_value, next_starting, next_ending, next_line)
         )
-        while next_token != tokenize.COMMENT and next_token != tokenize.STRING:
+        while (
+            next_token
+            and next_token != tokenize.COMMENT
+            and next_token != tokenize.STRING
+        ):
             next_token, next_token_value, next_starting, next_ending, next_line = next(
                 token_generator, (None, None, None, None, None)
             )
@@ -124,15 +140,17 @@ def get_formatted_file_content(file: IO) -> Tuple[int, str]:
                 (next_token, next_token_value, next_starting, next_ending, next_line)
             )
 
-        if next_token == tokenize.COMMENT and SQLFORMAT_COMMENT in next_token_value:
+        if not (
+            next_token == tokenize.COMMENT and NO_SQLFORMAT_COMMENT in next_token_value
+        ):
             formatted_sql = format_sql_string(token_value)
             tokens.append((token_type, formatted_sql, starting, ending, line))
-            tokens += following_tokens
-
             if formatted_sql != token_value:
                 count_changed_sql += 1
-        elif next_token == tokenize.STRING:
+        else:
             tokens.append((token_type, token_value, starting, ending, line))
+
+        if next_token == tokenize.STRING:
             tokens += following_tokens[:-1]
             handle_string_token(
                 token_generator,
@@ -143,7 +161,6 @@ def get_formatted_file_content(file: IO) -> Tuple[int, str]:
                 next_line,
             )
         else:
-            tokens.append((token_type, token_value, starting, ending, line))
             tokens += following_tokens
 
     token_generator = tokenize.generate_tokens(file.readline)
