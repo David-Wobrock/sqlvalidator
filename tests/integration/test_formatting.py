@@ -1635,3 +1635,34 @@ SELECT *
 FROM [complex.table.name];
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_union_all_nested_query():
+    sql = """select * from (
+select hash, max(date)
+from (
+(select * from t1)
+UNION ALL (select * from t2)
+) group by hash
+)"""
+    expected = """
+SELECT *
+FROM (
+ SELECT
+  hash,
+  MAX(date)
+ FROM (
+  (
+   SELECT *
+   FROM t1
+  )
+  UNION ALL
+  (
+   SELECT *
+   FROM t2
+  )
+ )
+ GROUP BY hash
+)
+"""
+    assert format_sql(sql) == expected.strip()

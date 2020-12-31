@@ -72,9 +72,13 @@ class SelectStatement:
                 from_statement = self.from_statement
 
             if isinstance(from_statement, Parenthesis):
-                from_str = "(\n{}\n)".format(
-                    from_statement.args[0].transform(is_subquery=True)
-                )
+                if isinstance(from_statement.args[0], SelectStatement):
+                    inner_from_str = from_statement.args[0].transform(is_subquery=True)
+                else:
+                    inner_from_str = " " + transform(from_statement.args[0]).replace(
+                        "\n", "\n "
+                    )
+                from_str = f"(\n{inner_from_str}\n)"
             else:
                 from_str = transform(from_statement)
 
@@ -1016,7 +1020,7 @@ class Join(Expression):
 
 
 class CombinedQueries(Expression):
-    SET_OPERATORS = ("union", "intersect", "except")
+    SET_OPERATORS = ("union", "intersect", "except", "all")
 
     def __init__(self, set_operator, left_query, right_query):
         self.set_operator = set_operator
