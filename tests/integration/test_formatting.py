@@ -1706,3 +1706,14 @@ LEFT JOIN t
 ON p = l;
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_where_with_offset_column():
+    sql = "select sum(x) from UNNEST(c) AS x WITH OFFSET where offset between 1 and 2 offset 5;"  # noqa
+    expected = """
+SELECT SUM(x)
+FROM UNNEST(c) AS x WITH OFFSET
+WHERE offset BETWEEN 1 AND 2
+OFFSET 5;
+"""
+    assert format_sql(sql) == expected.strip()

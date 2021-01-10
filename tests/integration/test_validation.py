@@ -159,7 +159,7 @@ def test_having_unknown_column_parenthesis():
 
 
 def test_having_multiple_unknown_column_parenthesis():
-    sql = "SELECT 1 HAVING 1=1, ((x))"
+    sql = "SELECT 1 HAVING 1=1 and ((x))"
     assert_invalid_sql(sql)
 
 

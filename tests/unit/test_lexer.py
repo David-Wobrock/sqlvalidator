@@ -38,31 +38,31 @@ from sqlvalidator.grammar.tokeniser import to_tokens
 
 
 def test_simple_function_parsing():
-    actual = ExpressionParser.parse(to_tokens("test(col)"))
+    actual, _ = ExpressionParser.parse(to_tokens("test(col)"))
     expected = FunctionCall("test", Column("col"))
     assert actual == expected
 
 
 def test_simple_function_parsing_no_args():
-    actual = ExpressionParser.parse(to_tokens("test()"))
+    actual, _ = ExpressionParser.parse(to_tokens("test()"))
     expected = FunctionCall("test")
     assert actual == expected
 
 
 def test_simple_function_multiple_params():
-    actual = ExpressionParser.parse(to_tokens("test(col, 'Test')"))
+    actual, _ = ExpressionParser.parse(to_tokens("test(col, 'Test')"))
     expected = FunctionCall("test", Column("col"), String("Test", quotes="'"))
     assert actual == expected
 
 
 def test_nested_functions():
-    actual = ExpressionParser.parse(to_tokens("test(foo(col))"))
+    actual, _ = ExpressionParser.parse(to_tokens("test(foo(col))"))
     expected = FunctionCall("test", FunctionCall("foo", Column("col")))
     assert actual == expected
 
 
 def test_nested_date_functions():
-    actual = ExpressionParser.parse(
+    actual, _ = ExpressionParser.parse(
         to_tokens("DATE(TIMESTAMP_TRUNC(CAST(date AS TIMESTAMP), MONTH))")
     )
     expected = FunctionCall(
@@ -80,79 +80,79 @@ def test_nested_date_functions():
 
 
 def test_string_value():
-    actual = ExpressionParser.parse(to_tokens("'VAL'"))
+    actual, _ = ExpressionParser.parse(to_tokens("'VAL'"))
     expected = String("VAL", quotes="'")
     assert actual == expected
 
 
 def test_string_value_double_quotes():
-    actual = ExpressionParser.parse(to_tokens('"val"'))
+    actual, _ = ExpressionParser.parse(to_tokens('"val"'))
     expected = String("val", quotes='"')
     assert actual == expected
 
 
 def test_string_value_back_quotes():
-    actual = ExpressionParser.parse(to_tokens("`val`"))
+    actual, _ = ExpressionParser.parse(to_tokens("`val`"))
     expected = String("val", quotes="`")
     assert actual == expected
 
 
 def test_aliased_column():
-    actual = ExpressionParser.parse(to_tokens("col AS column_name"))
+    actual, _ = ExpressionParser.parse(to_tokens("col AS column_name"))
     expected = Alias(Column("col"), alias=Column("column_name"), with_as=True)
     assert actual == expected
 
 
 def test_aliased_string_without_as():
-    actual = ExpressionParser.parse(to_tokens("'col' column_name"))
+    actual, _ = ExpressionParser.parse(to_tokens("'col' column_name"))
     expected = Alias(String("col", quotes="'"), alias="column_name", with_as=False)
     assert actual == expected
 
 
 def test_integer():
-    actual = ExpressionParser.parse(to_tokens("2"))
+    actual, _ = ExpressionParser.parse(to_tokens("2"))
     expected = Integer(2)
     assert actual == expected
 
 
 def test_negative_integer():
-    actual = ExpressionParser.parse(to_tokens("-2"))
+    actual, _ = ExpressionParser.parse(to_tokens("-2"))
     expected = Integer(-2)
     assert actual == expected
 
 
 def test_addition():
-    actual = ExpressionParser.parse(to_tokens("2+4"))
+    actual, _ = ExpressionParser.parse(to_tokens("2+4"))
     expected = Addition(Integer(2), Integer(4))
     assert actual == expected
 
 
 def test_chained_addition():
-    actual = ExpressionParser.parse(to_tokens("2+4+5"))
+    actual, _ = ExpressionParser.parse(to_tokens("2+4+5"))
     expected = Addition(Integer(2), Addition(Integer(4), Integer(5)))
     assert actual == expected
 
 
 def test_conditional_expression():
-    actual = ExpressionParser.parse(to_tokens("field = 4"))
+    actual, _ = ExpressionParser.parse(to_tokens("field = 4"))
     expected = Condition(Column("field"), "=", Integer(4))
     assert actual == expected
 
 
 def test_parenthesis():
-    actual = ExpressionParser.parse(to_tokens("(field)"))
+    actual, _ = ExpressionParser.parse(to_tokens("(field)"))
     expected = Parenthesis(Column("field"))
     assert actual == expected
 
 
 def test_multiple_parentheses():
-    actual = ExpressionParser.parse(to_tokens("((2))"))
+    actual, _ = ExpressionParser.parse(to_tokens("((2))"))
     expected = Parenthesis(Parenthesis(Integer(2)))
     assert actual == expected
 
 
 def test_parenthesis_conditional():
-    actual = ExpressionParser.parse(to_tokens("(field+3) = 4"))
+    actual, _ = ExpressionParser.parse(to_tokens("(field+3) = 4"))
     expected = Condition(
         Parenthesis(Addition(Column("field"), Integer(3))), "=", Integer(4)
     )
@@ -160,7 +160,7 @@ def test_parenthesis_conditional():
 
 
 def test_parenthesis_multiple_elements():
-    actual = ExpressionParser.parse(to_tokens("(field,other_field,3,'test')"))
+    actual, _ = ExpressionParser.parse(to_tokens("(field,other_field,3,'test')"))
     expected = Parenthesis(
         Column("field"), Column("other_field"), Integer(3), String("test", quotes="'")
     )
@@ -180,13 +180,13 @@ def test_from_subquery():
 
 
 def test_where_clause():
-    actual = WhereClauseParser.parse(to_tokens("col = 3"))
+    actual, _ = WhereClauseParser.parse(to_tokens("col = 3"))
     expected = WhereClause(Condition(Column("col"), "=", Integer(3)))
     assert actual == expected
 
 
 def test_boolean_where_clause():
-    actual = WhereClauseParser.parse(to_tokens("col = 3 and field = 5"))
+    actual, _ = WhereClauseParser.parse(to_tokens("col = 3 and field = 5"))
     expected = WhereClause(
         BooleanCondition(
             "and",
@@ -198,7 +198,7 @@ def test_boolean_where_clause():
 
 
 def test_between_where_clause():
-    actual = WhereClauseParser.parse(to_tokens("col between 3 and 5"))
+    actual, _ = WhereClauseParser.parse(to_tokens("col between 3 and 5"))
     expected = WhereClause(
         Condition(
             Column("col"),
@@ -214,7 +214,7 @@ def test_between_where_clause():
 
 
 def test_where_different_predicate():
-    actual = WhereClauseParser.parse(to_tokens("col <> 3"))
+    actual, _ = WhereClauseParser.parse(to_tokens("col <> 3"))
     expected = WhereClause(
         Condition(Column("col"), "<>", Integer(3)),
     )
@@ -222,7 +222,9 @@ def test_where_different_predicate():
 
 
 def test_parenthesis_boolean_where_clause():
-    actual = WhereClauseParser.parse(to_tokens("(col = 3 and field = 5) or (f2 or f3)"))
+    actual, _ = WhereClauseParser.parse(
+        to_tokens("(col = 3 and field = 5) or (f2 or f3)")
+    )
     expected = WhereClause(
         BooleanCondition(
             "or",
@@ -240,7 +242,7 @@ def test_parenthesis_boolean_where_clause():
 
 
 def test_parenthesis_expression_where_clause():
-    actual = WhereClauseParser.parse(to_tokens("(col + 1) = col2"))
+    actual, _ = WhereClauseParser.parse(to_tokens("(col + 1) = col2"))
     expected = WhereClause(
         Condition(Parenthesis(Addition(Column("col"), Integer(1))), "=", Column("col2"))
     )
@@ -248,7 +250,7 @@ def test_parenthesis_expression_where_clause():
 
 
 def test_multiple_args_boolean_condition():
-    actual = WhereClauseParser.parse(to_tokens("(col = 1 and col2=4 and col3=4)"))
+    actual, _ = WhereClauseParser.parse(to_tokens("(col = 1 and col2=4 and col3=4)"))
     expected = WhereClause(
         Parenthesis(
             BooleanCondition(
@@ -266,7 +268,7 @@ def test_multiple_args_boolean_condition():
 
 
 def test_nested_parenthesis_boolean():
-    actual = WhereClauseParser.parse(
+    actual, _ = WhereClauseParser.parse(
         to_tokens("(col = 1 and col2=4) or (col = 2 and (col =6 or col=9))")
     )
     expected = WhereClause(
@@ -298,7 +300,7 @@ def test_nested_parenthesis_boolean():
 
 
 def test_consecutive_parenthesis():
-    actual = ExpressionParser.parse(to_tokens("((col+1) = 3 AND col2=4)"))
+    actual, _ = ExpressionParser.parse(to_tokens("((col+1) = 3 AND col2=4)"))
     expected = Parenthesis(
         BooleanCondition(
             "AND",
@@ -406,13 +408,13 @@ def test_subquery():
 
 
 def test_parse_date_function():
-    actual = ExpressionParser.parse(to_tokens("DATE('2020-01-01')"))
+    actual, _ = ExpressionParser.parse(to_tokens("DATE('2020-01-01')"))
     expected = FunctionCall("DATE", String("2020-01-01", quotes="'"))
     assert actual == expected
 
 
 def test_parse_date_function_condition():
-    actual = ExpressionParser.parse(to_tokens("col >= DATE('2020-01-01')"))
+    actual, _ = ExpressionParser.parse(to_tokens("col >= DATE('2020-01-01')"))
     expected = Condition(
         Column("col"), ">=", FunctionCall("DATE", String("2020-01-01", quotes="'"))
     )
@@ -420,25 +422,25 @@ def test_parse_date_function_condition():
 
 
 def test_index_access():
-    actual = ExpressionParser.parse(to_tokens("array[0]"))
+    actual, _ = ExpressionParser.parse(to_tokens("array[0]"))
     expected = Index(Column("array"), [Integer(0)])
     assert actual == expected
 
 
 def test_index_access_alias():
-    actual = ExpressionParser.parse(to_tokens("array[0] alias"))
+    actual, _ = ExpressionParser.parse(to_tokens("array[0] alias"))
     expected = Alias(Index(Column("array"), [Integer(0)]), with_as=False, alias="alias")
     assert actual == expected
 
 
 def test_index_function_access():
-    actual = ExpressionParser.parse(to_tokens("array[index(0)]"))
+    actual, _ = ExpressionParser.parse(to_tokens("array[index(0)]"))
     expected = Index(Column("array"), [FunctionCall("index", Integer(0))])
     assert actual == expected
 
 
 def test_multiple_indices_access():
-    actual = ExpressionParser.parse(to_tokens("array[index(0), 'foo'] alias"))
+    actual, _ = ExpressionParser.parse(to_tokens("array[index(0), 'foo'] alias"))
     expected = Alias(
         Index(
             Column("array"),
@@ -451,7 +453,7 @@ def test_multiple_indices_access():
 
 
 def test_index_access_right_hand():
-    actual = ExpressionParser.parse(to_tokens("field = array[0]"))
+    actual, _ = ExpressionParser.parse(to_tokens("field = array[0]"))
     expected = Condition(
         Column("field"),
         "=",
@@ -731,7 +733,7 @@ GROUP BY f0_
 
 def test_boolean_condition_as_expression():
     sql = "field is not null and col > 0"
-    actual = ExpressionParser.parse(to_tokens(sql))
+    actual, _ = ExpressionParser.parse(to_tokens(sql))
     expected = BooleanCondition(
         "and",
         Condition(
@@ -857,13 +859,13 @@ def test_unnest_alias_with_offset_as_alias():
 
 
 def test_simple_chained_field():
-    actual = ExpressionParser.parse(to_tokens("table.field"))
+    actual, _ = ExpressionParser.parse(to_tokens("table.field"))
     expected = ChainedColumns(Column("table"), Column("field"))
     assert actual == expected
 
 
 def test_chained_field():
-    actual = ExpressionParser.parse(
+    actual, _ = ExpressionParser.parse(
         to_tokens("table.field[offset(0)].subfield[offset(0)]")
     )
     expected = ChainedColumns(
