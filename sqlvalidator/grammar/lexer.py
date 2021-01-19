@@ -5,6 +5,7 @@ from sqlvalidator.grammar.sql import (
     AnalyticsClause,
     ArithmaticOperator,
     Array,
+    ArrayAggFunctionCall,
     BitwiseOperation,
     Boolean,
     BooleanCondition,
@@ -554,6 +555,59 @@ class ExpressionParser:
                     expression = CastFunctionCall(column, cast_type)
                     next_token = next(tokens)
                     assert lower(next_token) == ")", next_token
+                elif lower(main_token) == "array_agg":
+                    next_token = next(tokens)
+                    if lower(next_token) == "distinct":
+                        distinct = True
+                        first_token = None
+                    else:
+                        distinct = False
+                        first_token = next_token
+
+                    column_tokens, next_token = get_tokens_until_one_of(
+                        tokens,
+                        stop_words=[")", "ignore", "respects", "order", "limit"],
+                        first_token=first_token,
+                    )
+                    column, _ = ExpressionParser.parse(iter(column_tokens))
+
+                    ignore_nulls = respect_nulls = False
+                    if lower(next_token) == "ignore":
+                        next_token = next(tokens)
+                        assert lower(next_token) == "nulls"
+                        ignore_nulls = True
+                        next_token = next(tokens)
+                    elif lower(next_token) == "respect":
+                        next_token = next(tokens)
+                        assert lower(next_token) == "nulls"
+                        respect_nulls = True
+                        next_token = next(tokens)
+
+                    if lower(next_token) == "order":
+                        next_token = next(tokens)
+                        assert lower(next_token) == "by"
+                        expression_tokens, next_token = get_tokens_until_one_of(
+                            tokens, ["limit", ")"]
+                        )
+                        order_bys = OrderByParser.parse(iter(expression_tokens))
+                    else:
+                        order_bys = None
+
+                    limit = None
+                    if lower(next_token) == "limit":
+                        next_token = next(tokens)
+                        limit = int(next_token)
+                        next_token = next(tokens)
+
+                    assert lower(next_token) == ")", next_token
+                    expression = ArrayAggFunctionCall(
+                        column=column,
+                        distinct=distinct,
+                        ignore_nulls=ignore_nulls,
+                        respect_nulls=respect_nulls,
+                        order_bys=order_bys,
+                        limit=limit,
+                    )
                 else:
                     argument_tokens = get_tokens_until_closing_parenthesis(tokens)
                     arguments_can_be_type = (

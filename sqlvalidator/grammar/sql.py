@@ -323,10 +323,13 @@ class OrderByClause(Expression):
     def __init__(self, *args):
         self.args = args
 
-    def __str__(self):
+    def transform(self, allow_linebreak=True):
         if len(self.args) > 1:
-            order_by_str = "\n" + ",\n".join(map(str, self.args))
-            order_by_str = order_by_str.replace("\n", "\n ")
+            if allow_linebreak:
+                order_by_str = "\n" + ",\n".join(map(str, self.args))
+                order_by_str = order_by_str.replace("\n", "\n ")
+            else:
+                order_by_str = " " + ", ".join(map(str, self.args))
         else:
             order_by_str = " " + transform(self.args[0])
         return order_by_str
@@ -484,6 +487,47 @@ class CastFunctionCall(FunctionCall):
             transform(self.args[0]),
             transform(self.args[2]),
         )
+
+
+class ArrayAggFunctionCall(FunctionCall):
+    def __init__(
+        self,
+        column,
+        distinct=False,
+        ignore_nulls=False,
+        respect_nulls=False,
+        order_bys=None,
+        limit=None,
+    ):
+        super().__init__("array_agg", column)
+        self.distinct = distinct
+        assert not (ignore_nulls and respect_nulls)
+        self.ignore_nulls = ignore_nulls
+        self.respect_nulls = respect_nulls
+        self.order_bys = order_bys
+        self.limit = limit
+
+    def __str__(self):
+        array_agg_str = "{}(".format(self.function_name.upper())
+        if self.distinct:
+            array_agg_str += "DISTINCT "
+
+        array_agg_str += transform(self.args[0]) + " "
+
+        if self.ignore_nulls:
+            array_agg_str += "IGNORE NULLS "
+        elif self.respect_nulls:
+            array_agg_str += "RESPECT NULLS "
+
+        if self.order_bys:
+            array_agg_str += "ORDER BY{}".format(
+                self.order_bys.transform(allow_linebreak=False)
+            )
+
+        if self.limit:
+            array_agg_str += " LIMIT {}".format(self.limit)
+
+        return array_agg_str + ")"
 
 
 class AnalyticsClause(Expression):

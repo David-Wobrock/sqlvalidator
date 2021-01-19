@@ -1717,3 +1717,30 @@ WHERE offset BETWEEN 1 AND 2
 OFFSET 5;
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_struct():
+    sql = "select struct(f1, f2 as x) from t"
+    expected = """
+SELECT STRUCT(f1, f2 AS x)
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_array_agg_order_by():
+    sql = "SELECT ARRAY_AGG(a ORDER BY o) agg from t"
+    expected = """
+SELECT ARRAY_AGG(a ORDER BY o) agg
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_distinct_array_agg_order_by():
+    sql = "SELECT ARRAY_AGG(distinct a ignore nulls order by o ASC, b desc limit 4) agg from t"  # noqa
+    expected = """
+SELECT ARRAY_AGG(DISTINCT a IGNORE NULLS ORDER BY o ASC, b DESC LIMIT 4) agg
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
