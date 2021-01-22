@@ -509,7 +509,9 @@ class ExpressionParser:
             expression = Null()
         elif lower(main_token) == Negation.PREDICATE:
             rest_expression, next_token = ExpressionParser.parse(
-                tokens, is_right_hand=True
+                tokens,
+                is_right_hand=True,
+                until_one_of=until_one_of,
             )
             expression = Negation(rest_expression)
         elif main_token == "(":
@@ -547,7 +549,9 @@ class ExpressionParser:
                         tokens, stop_words=["as"]
                     )
                     column, _ = ExpressionParser.parse(
-                        iter(column_tokens), is_right_hand=True
+                        iter(column_tokens),
+                        is_right_hand=True,
+                        until_one_of=until_one_of,
                     )
                     assert lower(next_token) == "as", next_token
                     next_token = next(tokens)
@@ -569,7 +573,9 @@ class ExpressionParser:
                         stop_words=[")", "ignore", "respects", "order", "limit"],
                         first_token=first_token,
                     )
-                    column, _ = ExpressionParser.parse(iter(column_tokens))
+                    column, _ = ExpressionParser.parse(
+                        iter(column_tokens), until_one_of=until_one_of
+                    )
 
                     ignore_nulls = respect_nulls = False
                     if lower(next_token) == "ignore":
@@ -623,7 +629,9 @@ class ExpressionParser:
                 and lower(main_token) in DatePartExtraction.PARTS
                 and lower(next_token) == "from"
             ):
-                rest_expression, next_token = ExpressionParser.parse(tokens)
+                rest_expression, next_token = ExpressionParser.parse(
+                    tokens, until_one_of=until_one_of
+                )
                 expression = DatePartExtraction(main_token, rest_expression)
             elif lower(main_token) in Type.VALUES and can_be_type:
                 expression = Type(main_token)
@@ -699,11 +707,15 @@ class ExpressionParser:
         if next_token and next_token in ("+", "-", "*", "/"):
             left_hand = expression
             symbol = next_token
-            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            right_hand, next_token = ExpressionParser.parse(
+                tokens, is_right_hand=True, until_one_of=until_one_of
+            )
             expression = ArithmaticOperator(symbol, left_hand, right_hand)
 
         if next_token == ".":
-            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            right_hand, next_token = ExpressionParser.parse(
+                tokens, is_right_hand=True, until_one_of=until_one_of
+            )
             expression = ChainedColumns(expression, right_hand)
 
         if is_right_hand:
@@ -721,17 +733,19 @@ class ExpressionParser:
                     )
                     tokens = iter(tokens)
 
-            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            right_hand, next_token = ExpressionParser.parse(
+                tokens, is_right_hand=True, until_one_of=until_one_of
+            )
             expression = Condition(expression, symbol, right_hand)
         elif lower(next_token) == "between":
             symbol = next_token
             right_hand_left, next_token = ExpressionParser.parse(
-                tokens, is_right_hand=True
+                tokens, is_right_hand=True, until_one_of=until_one_of
             )
             if lower(next_token) != "and":
                 raise ParsingError("expected AND")
             right_hand_right, next_token = ExpressionParser.parse(
-                tokens, is_right_hand=True
+                tokens, is_right_hand=True, until_one_of=until_one_of
             )
             right_hand = BooleanCondition(
                 "and",
@@ -741,13 +755,17 @@ class ExpressionParser:
             expression = Condition(expression, symbol, right_hand)
         elif next_token in BitwiseOperation.OPERATORS:
             operator = next_token
-            right_hand, next_token = ExpressionParser.parse(tokens, is_right_hand=True)
+            right_hand, next_token = ExpressionParser.parse(
+                tokens, is_right_hand=True, until_one_of=until_one_of
+            )
             expression = BitwiseOperation(expression, operator, right_hand)
 
         if lower(next_token) in BooleanCondition.PREDICATES:
             left_hand = expression
             symbol = next_token
-            right_hand, next_token = ExpressionParser.parse(tokens)
+            right_hand, next_token = ExpressionParser.parse(
+                tokens, until_one_of=until_one_of
+            )
             expression = BooleanCondition(symbol, left_hand, right_hand)
 
         if lower(next_token) == "except":
@@ -766,12 +784,14 @@ class ExpressionParser:
             and next_token != '"'
             and next_token != "`"
             and next_token != ";"
-            and next_token not in until_one_of
+            and lower(next_token) not in until_one_of
             and can_alias
         ):
             if lower(next_token) == "as":
                 with_as = True
-                alias, _ = ExpressionParser.parse(tokens, is_right_hand=True)
+                alias, _ = ExpressionParser.parse(
+                    tokens, is_right_hand=True, until_one_of=until_one_of
+                )
             else:
                 with_as = False
                 alias = next_token

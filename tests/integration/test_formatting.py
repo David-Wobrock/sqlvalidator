@@ -1744,3 +1744,21 @@ SELECT ARRAY_AGG(DISTINCT a IGNORE NULLS ORDER BY o ASC, b DESC LIMIT 4) agg
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_where_boolean_followed_by_group():
+    sql = """
+SELECT *
+FROM t
+WHERE col1 = col0 and col2 = col0 and col3 = col0
+GROUP BY field, col0
+"""
+    expected = """
+SELECT *
+FROM t
+WHERE col1 = col0 AND col2 = col0 AND col3 = col0
+GROUP BY
+ field,
+ col0
+"""
+    assert format_sql(sql) == expected.strip()
