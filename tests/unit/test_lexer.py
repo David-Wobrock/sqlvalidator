@@ -8,6 +8,7 @@ from sqlvalidator.grammar.sql import (
     Addition,
     Alias,
     AnalyticsClause,
+    Array,
     BooleanCondition,
     CastFunctionCall,
     ChainedColumns,
@@ -883,4 +884,16 @@ def test_aliased_table():
     expected = Table(
         Alias(Column("table"), with_as=True, alias=Column("sq_1")),
     )
+    assert actual == expected
+
+
+def test_empty_list():
+    actual, _ = ExpressionParser.parse(to_tokens("[]"))
+    expected = Array()
+    assert actual == expected
+
+
+def test_empty_list_with_alias():
+    actual, _ = ExpressionParser.parse(to_tokens("[] x"))
+    expected = Alias(Array(), with_as=False, alias="x")
     assert actual == expected

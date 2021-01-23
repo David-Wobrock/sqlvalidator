@@ -105,6 +105,11 @@ Validation contains:
 
 (only on SELECT-statements)
 
+## SQL Syntax
+
+* https://www.postgresql.org/docs/9.6/sql-select.html
+* https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax
+
 ## Internals
 
 ### Run tests

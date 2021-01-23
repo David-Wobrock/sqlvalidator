@@ -51,7 +51,10 @@ def get_tokens_until_one_of(tokens, stop_words, first_token=None, keep=None):
         lower(next_token) in stop_words
         and count_parenthesis <= 0
         and count_square_brackets <= 0
-        and (lower(argument_tokens[-1]), lower(next_token)) not in keep
+        and (
+            not argument_tokens
+            or (lower(argument_tokens[-1]), lower(next_token)) not in keep
+        )
     ):
         argument_tokens.append(next_token)
         if next_token == "(":

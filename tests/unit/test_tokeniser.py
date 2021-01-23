@@ -123,3 +123,11 @@ def test_get_tokens_until_with_keep_capitalised():
         ["foo", "WITH", "offset"],
         "offset",
     )
+
+
+def test_empty_list_get_tokens_until():
+    tokens = iter(["]"])
+    assert get_tokens_until_one_of(tokens, ["]"]) == (
+        [],
+        "]",
+    )
