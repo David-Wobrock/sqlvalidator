@@ -247,6 +247,9 @@ class WhereClause(Expression):
             )
         return errors
 
+    def __eq__(self, other):
+        return type(self) == type(other) and self.value == other.value
+
 
 class GroupByClause(Expression):
     def __init__(self, *args, rollup=False):
@@ -1174,6 +1177,14 @@ class Condition(Expression):
     def __repr__(self):
         return "<Condition: {!r} {} {!r}>".format(
             self.value, self.predicate, self.right_hand
+        )
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.value == other.value
+            and self.predicate == other.predicate
+            and self.right_hand == other.right_hand
         )
 
     def validate(self, known_fields):

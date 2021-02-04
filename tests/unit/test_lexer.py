@@ -568,7 +568,7 @@ GROUP BY f0_
                                             Column("_TABLE_SUFFIX"),
                                             "BETWEEN",
                                             BooleanCondition(
-                                                "AND",
+                                                "and",
                                                 String("20200410", quotes="'"),
                                                 String("20200510", quotes="'"),
                                             ),
@@ -605,7 +605,7 @@ GROUP BY f0_
                                                     Column("_TABLE_SUFFIX"),
                                                     "BETWEEN",
                                                     BooleanCondition(
-                                                        "AND",
+                                                        "and",
                                                         String("20200401", quotes="'"),
                                                         String("20200501", quotes="'"),
                                                     ),
@@ -652,7 +652,7 @@ GROUP BY f0_
                                             Column("_TABLE_SUFFIX"),
                                             "BETWEEN",
                                             BooleanCondition(
-                                                "AND",
+                                                "and",
                                                 String("20200310", quotes="'"),
                                                 String("20200410", quotes="'"),
                                             ),
@@ -689,7 +689,7 @@ GROUP BY f0_
                                                     Column("_TABLE_SUFFIX"),
                                                     "BETWEEN",
                                                     BooleanCondition(
-                                                        "AND",
+                                                        "and",
                                                         String("20200301", quotes="'"),
                                                         String("20200401", quotes="'"),
                                                     ),
