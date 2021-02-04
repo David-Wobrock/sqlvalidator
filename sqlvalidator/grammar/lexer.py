@@ -493,10 +493,11 @@ class ExpressionParser:
         can_be_type=False,
         can_alias=True,
         until_one_of=None,
+        first_token=None,
     ) -> Tuple[Expression, Any]:
         until_one_of = until_one_of or []
 
-        main_token = next(tokens)
+        main_token = first_token or next(tokens)
         next_token = None
 
         if main_token in String.QUOTES:
@@ -725,16 +726,17 @@ class ExpressionParser:
             symbol = next_token
             if lower(next_token) == "is":
                 next_next_token = next(tokens)
+                first_token = None
                 if lower(next_next_token) == "not":
                     symbol = "is not"
                 else:
-                    tokens, _ = get_tokens_until_one_of(
-                        tokens, [], first_token=next_next_token
-                    )
-                    tokens = iter(tokens)
+                    first_token = next_next_token
 
             right_hand, next_token = ExpressionParser.parse(
-                tokens, is_right_hand=True, until_one_of=until_one_of
+                tokens,
+                is_right_hand=True,
+                until_one_of=until_one_of,
+                first_token=first_token,
             )
             expression = Condition(expression, symbol, right_hand)
         elif lower(next_token) == "between":

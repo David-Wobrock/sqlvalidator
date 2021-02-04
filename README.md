@@ -34,7 +34,6 @@ SELECT
  column2
 FROM table
 """
-
 ```
 
 A `nosqlformat` comment can be appended to indicate to `sqlvalidator` that this string should not be formatted.

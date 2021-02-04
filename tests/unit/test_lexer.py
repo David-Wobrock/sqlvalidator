@@ -300,6 +300,24 @@ def test_nested_parenthesis_boolean():
     assert actual == expected
 
 
+def test_where_clause_keeps_generator_intact():
+    tokens = to_tokens("col = 3 group by col")
+    actual, next_token = WhereClauseParser.parse(tokens)
+    expected = WhereClause(Condition(Column("col"), "=", Integer(3)))
+    assert actual == expected
+    assert next_token == "group"
+    assert list(tokens) == ["by", "col"]
+
+
+def test_where_clause_keeps_generator_intact_is_null_condition():
+    tokens = to_tokens("col is null group by col")
+    actual, next_token = WhereClauseParser.parse(tokens)
+    expected = WhereClause(Condition(Column("col"), "is", Null()))
+    assert actual == expected
+    assert next_token == "group"
+    assert list(tokens) == ["by", "col"]
+
+
 def test_consecutive_parenthesis():
     actual, _ = ExpressionParser.parse(to_tokens("((col+1) = 3 AND col2=4)"))
     expected = Parenthesis(
