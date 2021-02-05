@@ -2,7 +2,7 @@ import argparse
 
 from sqlvalidator import file_formatter
 
-__version__ = "0.0.13"
+__version__ = "0.0.14"
 
 
 def _main() -> None:
