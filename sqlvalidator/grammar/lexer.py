@@ -180,8 +180,15 @@ class FromStatementParser:
             expression = Parenthesis(argument)
             next_token = next(tokens, None)
         elif next_token == "'" or next_token == '"' or next_token == "`":
-            expression = Table(StringParser.parse(tokens, next_token))
+            table_name = StringParser.parse(tokens, next_token)
             next_token = next(tokens, None)
+            while next_token == ".":
+                right_hand, next_token = ExpressionParser.parse(
+                    tokens,
+                    is_right_hand=True,
+                )
+                table_name = ChainedColumns(table_name, right_hand)
+            expression = Table(table_name)
         elif next_token == "[":
             argument_tokens, next_token = get_tokens_until_one_of(
                 tokens, stop_words=["]"]

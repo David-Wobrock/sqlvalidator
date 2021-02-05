@@ -1828,3 +1828,21 @@ SELECT c1 << 32
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_quoted_table_name():
+    sql = 'SELECT col FROM "schema"."table"'
+    expected = """
+SELECT col
+FROM "schema"."table"
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_long_quoted_table_name():
+    sql = 'SELECT col FROM "project"."dataset"."table"'
+    expected = """
+SELECT col
+FROM "project"."dataset"."table"
+"""
+    assert format_sql(sql) == expected.strip()
