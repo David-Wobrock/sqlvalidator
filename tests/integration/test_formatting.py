@@ -1762,3 +1762,12 @@ GROUP BY
  col0
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_date_column_in_function_call():
+    sql = "select if(date >= date('2018-04-10'), col, null) from t"
+    expected = """
+SELECT IF(date >= DATE('2018-04-10'), col, NULL)
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()

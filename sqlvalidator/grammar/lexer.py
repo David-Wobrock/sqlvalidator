@@ -617,8 +617,8 @@ class ExpressionParser:
                     )
                 else:
                     argument_tokens = get_tokens_until_closing_parenthesis(tokens)
-                    arguments_can_be_type = (
-                        "," in argument_tokens or lower(main_token) == "if"
+                    arguments_can_be_type = can_be_type or any(
+                        lower(t) == "timestamp_trunc" for t in argument_tokens
                     )
                     arguments = ExpressionListParser.parse(
                         iter(argument_tokens), can_be_type=arguments_can_be_type
