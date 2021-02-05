@@ -1809,3 +1809,13 @@ WHERE
  )
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_contains_predicate():
+    sql = "select field from t where x contains 'foo';"
+    expected = """
+SELECT field
+FROM t
+WHERE x CONTAINS 'foo';
+"""
+    assert format_sql(sql) == expected.strip()
