@@ -741,6 +741,13 @@ class ExpressionParser:
                     symbol = "is not"
                 else:
                     first_token = next_next_token
+            elif lower(next_token) == "not":
+                next_next_token = next(tokens)
+                first_token = None
+                if lower(next_next_token) == "in":
+                    symbol = "not in"
+                else:
+                    first_token = next_next_token
 
             right_hand, next_token = ExpressionParser.parse(
                 tokens,

@@ -1174,7 +1174,7 @@ class UsingClause(Expression):
 
 
 class Condition(Expression):
-    PREDICATES = ("=", ">", "<", "<=", ">=", "is", "like", "<>", "in")
+    PREDICATES = ("=", ">", "<", "<=", ">=", "is", "like", "<>", "in", "not")
 
     def __init__(self, expression, predicate, right_hand):
         super().__init__(expression)

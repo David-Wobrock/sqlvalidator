@@ -1791,3 +1791,21 @@ SELECT
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_where_not_in_subquery():
+    sql = """select field
+FROM t WHERE id NOT IN (SELECT id
+FROM other_table
+WHERE col <> 0)"""
+    expected = """
+SELECT field
+FROM t
+WHERE
+ id NOT IN (
+  SELECT id
+  FROM other_table
+  WHERE col <> 0
+ )
+"""
+    assert format_sql(sql) == expected.strip()
