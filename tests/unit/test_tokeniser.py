@@ -33,6 +33,16 @@ def test_arithmetic():
     assert list(to_tokens(value)) == ["2", "+", "3", "*", "5", "/", "7", "-", "5"]
 
 
+def test_floating_point_numbers():
+    value = "5.9998/7-5.34"
+    assert list(to_tokens(value)) == ["5.9998", "/", "7", "-", "5.34"]
+
+
+def test_floating_point_numbers_with_column():
+    value = "f * 5.9998"
+    assert list(to_tokens(value)) == ["f", "*", "5.9998"]
+
+
 def test_parenthesis_arithmetic():
     value = "(2+3)"
     assert list(to_tokens(value)) == ["(", "2", "+", "3", ")"]

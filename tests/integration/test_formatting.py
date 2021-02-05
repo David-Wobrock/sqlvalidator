@@ -1771,3 +1771,23 @@ SELECT IF(date >= DATE('2018-04-10'), col, NULL)
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_floating_point_number():
+    sql = "select f * 0.0009 from t"
+    expected = """
+SELECT f * 0.0009
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_negative_floating_point_number():
+    sql = "select f-0.0009, -8.9 from t"
+    expected = """
+SELECT
+ f - 0.0009,
+ -8.9
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()

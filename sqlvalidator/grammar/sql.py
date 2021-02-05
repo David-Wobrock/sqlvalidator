@@ -745,6 +745,18 @@ class Integer(Expression):
         return int
 
 
+class Float(Expression):
+    def __init__(self, value):
+        super().__init__(float(value))
+
+    def __str__(self):
+        return str(self.value)
+
+    @property
+    def return_type(self):
+        return float
+
+
 class Null(Expression):
     VALUES = ("null",)
 

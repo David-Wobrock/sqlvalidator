@@ -18,6 +18,7 @@ from sqlvalidator.grammar.sql import (
     DatePartExtraction,
     ExceptClause,
     Expression,
+    Float,
     FunctionCall,
     GroupByClause,
     HavingClause,
@@ -504,6 +505,8 @@ class ExpressionParser:
             expression = StringParser.parse(tokens, main_token)
         elif main_token.isdigit():
             expression = Integer(main_token)
+        elif main_token.replace(".", "").isdigit():
+            expression = Float(main_token)
         elif lower(main_token) in Boolean.BOOLEAN_VALUES:
             expression = Boolean(main_token)
         elif lower(main_token) in Null.VALUES:
@@ -647,6 +650,13 @@ class ExpressionParser:
                 next_token = next(tokens, None)
             elif next_token is not None and main_token == "-" and next_token.isdigit():
                 expression = Integer(-int(next_token))
+                next_token = next(tokens, None)
+            elif (
+                next_token is not None
+                and main_token == "-"
+                and next_token.replace(".", "").isdigit()
+            ):
+                expression = Float(-float(next_token))
                 next_token = next(tokens, None)
             elif (
                 lower(main_token) in String.PREFIXES

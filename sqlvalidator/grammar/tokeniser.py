@@ -133,8 +133,11 @@ def _split_on_whitespace_token(token: str, value: str):
 
 
 def _split_on_kept_token(token: str, value: str):
-    for elem in split_with_sep(value, token):
-        yield from split_tokens(elem)
+    if token == "." and "." in value and value.replace(".", "").isdigit():
+        yield value
+    else:
+        for elem in split_with_sep(value, token):
+            yield from split_tokens(elem)
 
 
 def split_tokens(value: str):
