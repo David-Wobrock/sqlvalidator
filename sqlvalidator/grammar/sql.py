@@ -939,7 +939,7 @@ class Addition(ArithmaticOperator):
 
 
 class BitwiseOperation(Expression):
-    OPERATORS = ("&", "|", "^")
+    OPERATORS = ("&", "|", "^", "||", "<<", ">>", "#")
 
     def __init__(self, expression, predicate, right_hand):
         super().__init__(expression)

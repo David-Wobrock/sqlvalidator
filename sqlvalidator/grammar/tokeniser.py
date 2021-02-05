@@ -18,7 +18,7 @@ KEPT_SPLIT_TOKENS = (
     ">",
     ".",
 )
-MERGE_TOKENS = ("<>", "<=", ">=")
+MERGE_TOKENS = ("<>", "<=", ">=", "<<", ">>", "||")
 
 
 def lower(s: Optional[str]) -> Optional[str]:

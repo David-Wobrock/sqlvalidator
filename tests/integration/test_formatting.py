@@ -1819,3 +1819,12 @@ FROM t
 WHERE x CONTAINS 'foo';
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_bitwise_shifting():
+    sql = "select c1<<32 from t"
+    expected = """
+SELECT c1 << 32
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
