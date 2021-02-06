@@ -699,6 +699,7 @@ class DatePartExtraction(Expression):
         "dayofmonth",
         "dayofweek",
         "dayofyear",
+        "date",
     )
 
     def __init__(self, part, date_expression):

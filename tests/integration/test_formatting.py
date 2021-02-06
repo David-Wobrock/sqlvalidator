@@ -1846,3 +1846,11 @@ SELECT col
 FROM "project"."dataset"."table"
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_extract_date():
+    sql = "select extract(date from some_date)"
+    expected = """
+SELECT EXTRACT(DATE FROM some_date)
+"""
+    assert format_sql(sql) == expected.strip()
