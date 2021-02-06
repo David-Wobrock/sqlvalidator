@@ -15,6 +15,7 @@ from sqlvalidator.grammar.sql import (
     Column,
     CombinedQueries,
     Condition,
+    CountFunctionCall,
     DatePartExtraction,
     ExceptClause,
     Expression,
@@ -625,6 +626,20 @@ class ExpressionParser:
                         order_bys=order_bys,
                         limit=limit,
                     )
+                elif lower(main_token) == "count":
+                    next_token = next(tokens)
+                    if lower(next_token) == "distinct":
+                        distinct = True
+                        first_token = None
+                    else:
+                        distinct = False
+                        first_token = next_token
+
+                    argument_tokens = get_tokens_until_closing_parenthesis(
+                        tokens, first_token=first_token
+                    )
+                    arguments = ExpressionListParser.parse(iter(argument_tokens))
+                    expression = CountFunctionCall(*arguments, distinct=distinct)
                 else:
                     argument_tokens = get_tokens_until_closing_parenthesis(tokens)
                     arguments_can_be_type = can_be_type or any(

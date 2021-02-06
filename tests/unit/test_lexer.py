@@ -14,6 +14,7 @@ from sqlvalidator.grammar.sql import (
     ChainedColumns,
     Column,
     Condition,
+    CountFunctionCall,
     ExceptClause,
     FunctionCall,
     GroupByClause,
@@ -412,7 +413,7 @@ def test_subquery():
         from_statement=Parenthesis(
             SelectStatement(
                 expressions=[
-                    Alias(FunctionCall("count", Column("*")), "col", with_as=False)
+                    Alias(CountFunctionCall(Column("*")), "col", with_as=False)
                 ],
                 from_statement=Table(Column("table")),
                 group_by_clause=GroupByClause(Column("x")),

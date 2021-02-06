@@ -25,9 +25,9 @@ def lower(s: Optional[str]) -> Optional[str]:
     return s.lower() if s else s
 
 
-def get_tokens_until_closing_parenthesis(tokens):
+def get_tokens_until_closing_parenthesis(tokens, first_token=None):
     argument_tokens = []
-    next_token = next(tokens, None)
+    next_token = first_token or next(tokens, None)
     count_parenthesis = 0
     while next_token is not None and not (next_token == ")" and count_parenthesis == 0):
         argument_tokens.append(next_token)

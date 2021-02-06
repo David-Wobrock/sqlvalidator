@@ -1854,3 +1854,21 @@ def test_extract_date():
 SELECT EXTRACT(DATE FROM some_date)
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_count_distinct():
+    sql = "SELECT count(distinct id) agg from t"
+    expected = """
+SELECT COUNT(DISTINCT id) agg
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_count_distinct_with_function():
+    sql = "SELECT count(distinct IF(code = 200, url, NULL)) agg from t"
+    expected = """
+SELECT COUNT(DISTINCT IF(code = 200, url, NULL)) agg
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()

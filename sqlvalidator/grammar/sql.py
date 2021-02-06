@@ -492,6 +492,22 @@ class CastFunctionCall(FunctionCall):
         )
 
 
+class CountFunctionCall(FunctionCall):
+    def __init__(self, *args, distinct=False):
+        super().__init__("count", args)
+        self.distinct = distinct
+
+    def __str__(self):
+        return "{}({}{})".format(
+            self.function_name.upper(),
+            "DISTINCT " if self.distinct else "",
+            ", ".join(map(transform, *self.args)),
+        )
+
+    def __eq__(self, other):
+        return super().__eq__(other) and self.distinct == other.distinct
+
+
 class ArrayAggFunctionCall(FunctionCall):
     def __init__(
         self,
