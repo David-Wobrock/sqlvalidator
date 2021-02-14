@@ -109,6 +109,16 @@ Validation contains:
 * https://www.postgresql.org/docs/9.6/sql-select.html
 * https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax
 
+## Contributing
+
+If you want to contribute to the sqlvalidator, first, thank you for the interest.
+
+Don't hesitate to open an Issue with a snippet of the failing SQL query and what the expected output would be.
+
+However, I don't guarantee that will accept any Pull Request made to the repository.
+This is not because I don't value the work and energy put into contribution, but more because the project is
+still early stage, and I want to keep full control of its direction for now.
+
 ## Internals
 
 ### Run tests
@@ -119,5 +129,5 @@ pytest
 
 ### Publishing
 
-* `python3 setup.py sdist bdist_wheel --universal`
-* `twine upload dist/sqlvalidator-X.Y.Z-py2.py3-none-any.whl dist/sqlvalidator-X.Y.Z.tar.gz`
+* `python3 setup.py sdist bdist_wheel`
+* `twine upload dist/sqlvalidator-X.Y.Z-py3-none-any.whl dist/sqlvalidator-X.Y.Z.tar.gz`
