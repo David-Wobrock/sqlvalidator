@@ -755,17 +755,16 @@ class ExpressionParser:
             return expression, next_token
 
         if lower(next_token) in Condition.PREDICATES:
+            first_token = None
             symbol = next_token
             if lower(next_token) == "is":
                 next_next_token = next(tokens)
-                first_token = None
                 if lower(next_next_token) == "not":
                     symbol = "is not"
                 else:
                     first_token = next_next_token
             elif lower(next_token) == "not":
                 next_next_token = next(tokens)
-                first_token = None
                 if lower(next_next_token) == "in":
                     symbol = "not in"
                 else:

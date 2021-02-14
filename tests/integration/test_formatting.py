@@ -1872,3 +1872,12 @@ SELECT COUNT(DISTINCT IF(code = 200, url, NULL)) agg
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_count_equal_countif():
+    sql = "select count(1) = countif(date >= date('1994-04-11')) num_recent from t"
+    expected = """
+SELECT COUNT(1) = COUNTIF(date >= DATE('1994-04-11')) num_recent
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
