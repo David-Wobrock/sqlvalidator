@@ -531,15 +531,15 @@ class ArrayAggFunctionCall(FunctionCall):
         if self.distinct:
             array_agg_str += "DISTINCT "
 
-        array_agg_str += transform(self.args[0]) + " "
+        array_agg_str += transform(self.args[0])
 
         if self.ignore_nulls:
-            array_agg_str += "IGNORE NULLS "
+            array_agg_str += " IGNORE NULLS"
         elif self.respect_nulls:
-            array_agg_str += "RESPECT NULLS "
+            array_agg_str += " RESPECT NULLS"
 
         if self.order_bys:
-            array_agg_str += "ORDER BY{}".format(
+            array_agg_str += " ORDER BY{}".format(
                 self.order_bys.transform(allow_linebreak=False)
             )
 

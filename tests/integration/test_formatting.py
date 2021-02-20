@@ -1728,6 +1728,15 @@ FROM t
     assert format_sql(sql) == expected.strip()
 
 
+def test_array_agg():
+    sql = "SELECT ARRAY_AGG(a) agg from t"
+    expected = """
+SELECT ARRAY_AGG(a) agg
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_array_agg_order_by():
     sql = "SELECT ARRAY_AGG(a ORDER BY o) agg from t"
     expected = """
