@@ -200,8 +200,7 @@ class FromStatementParser:
             next_token = next(tokens, None)
         else:
             if lower(next_token) == "unnest":
-                expression = UnnestParser.parse(tokens)
-                next_token = next(tokens, None)
+                expression, next_token = UnnestParser.parse(tokens)
             else:
                 argument_tokens, next_token = get_tokens_until_one_of(
                     tokens,
@@ -351,12 +350,16 @@ class UnnestParser:
                     offset_alias = next(tokens)
                 else:
                     offset_alias = next_token
+                next_token = next(tokens, None)
 
-        return Unnest(
-            expression,
-            with_offset=with_offset,
-            with_offset_as=with_offset_as,
-            offset_alias=offset_alias,
+        return (
+            Unnest(
+                expression,
+                with_offset=with_offset,
+                with_offset_as=with_offset_as,
+                offset_alias=offset_alias,
+            ),
+            next_token,
         )
 
 

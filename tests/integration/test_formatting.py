@@ -1503,6 +1503,33 @@ FROM t1, UNNEST(t2);
     assert format_sql(sql) == expected.strip()
 
 
+def test_multiple_joins_unnest():
+    sql = "select field from t1 a, unnest(t2) as b, unnest(t3) as c;"
+    expected = """
+SELECT field
+FROM t1 a, UNNEST(t2) AS b, UNNEST(t3) AS c;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_nested_multiple_joins_unnest():
+    sql = (
+        "select field from (select x from (select * from t1) a, unnest(t2) as b,"
+        "unnest(t3) as c);"
+    )
+    expected = """
+SELECT field
+FROM (
+ SELECT x
+ FROM (
+  SELECT *
+  FROM t1
+ ) a, UNNEST(t2) AS b, UNNEST(t3) AS c
+);
+"""
+    assert format_sql(sql) == expected.strip()
+
+
 def test_having_boolean_clause():
     sql = (
         "select dim from t group by dim having sum(field) is not null and avg(col) > 0"
