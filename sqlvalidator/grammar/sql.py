@@ -1197,6 +1197,7 @@ class Condition(Expression):
         "<",
         "<=",
         ">=",
+        "!=",
         "is",
         "like",
         "<>",
