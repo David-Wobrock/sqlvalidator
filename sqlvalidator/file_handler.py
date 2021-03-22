@@ -197,7 +197,9 @@ def analyse_file(
 
     file_has_invalid_sql = count_has_errors > 0
     if file_has_invalid_sql and validate:
-        print("invalid queries in sql.py ({} invalid SQL)".format(count_has_errors))
+        print(
+            "invalid queries in {} ({} invalid SQL)".format(filename, count_has_errors)
+        )
 
     return InputSQLAnalyseInfo(
         num_changed_files=1 if file_changed else 0,
