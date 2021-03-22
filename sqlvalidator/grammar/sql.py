@@ -428,11 +428,11 @@ class LimitClause(Expression):
         value = self.value
         while isinstance(value, Parenthesis):
             value = value.value
-        if self.value.return_type != int:
-            errors.append("argument of OFFSET must not contain variables")
+        if value.return_type != int or not isinstance(value, Integer):
+            errors.append("argument of LIMIT must not contain variables")
         else:
             if isinstance(value, Integer) and value.value < 0:
-                errors.append("OFFSET must not be negative")
+                errors.append("LIMIT must not be negative")
         return errors
 
 
@@ -442,11 +442,11 @@ class OffsetClause(Expression):
         value = self.value
         while isinstance(value, Parenthesis):
             value = value.value
-        if self.value.return_type != int:
-            errors.append("argument of LIMIT must be integer")
+        if value.return_type != int or not isinstance(value, Integer):
+            errors.append("argument of OFFSET must be integer")
         else:
             if isinstance(value, Integer) and value.value < 0:
-                errors.append("LIMIT must not be negative")
+                errors.append("OFFSET must not be negative")
         return errors
 
 
@@ -689,6 +689,10 @@ class ChainedColumns(Expression):
             and all(a == o for a, o in zip(self.columns, other.columns))
         )
 
+    @property
+    def return_type(self):
+        return self.columns[0].return_type
+
 
 class Type(Expression):
     VALUES = ("int", "float", "day", "month", "timestamp", "int64", "string", "date")
@@ -892,7 +896,9 @@ class Alias(Expression):
     def transform(self, expression=None):
         expression = expression or self.expression
         return "{}{}{}".format(
-            expression, " AS " if self.with_as else " ", transform(self.alias)
+            transform(expression),
+            " AS " if self.with_as else " ",
+            transform(self.alias),
         )
 
     def __repr__(self):
@@ -912,6 +918,10 @@ class Alias(Expression):
         if isinstance(self.expression, Column):
             errors += self.expression.validate(known_fields)
         return errors
+
+    @property
+    def return_type(self):
+        return self.expression.return_type
 
 
 class Index(Expression):
@@ -954,6 +964,8 @@ class ArithmaticOperator(Expression):
 
     @property
     def return_type(self):
+        if any(isinstance(a, float) for a in self.args):
+            return float
         return int
 
 
@@ -1295,7 +1307,7 @@ class BooleanCondition(Expression):
         errors = super().validate(known_fields)
         for a in self.args:
             errors += a.validate(known_fields)
-            if a.return_type != bool:
+            if a.return_type != bool and a.return_type != Any:
                 errors.append(
                     "The argument of {} must be type boolean, not type {}".format(
                         self.type.upper(), a.return_type
@@ -1320,6 +1332,10 @@ class Negation(Expression):
         if not isinstance(self.value, Parenthesis):
             negation += " "
         return negation + transform(self.value)
+
+    @property
+    def return_type(self):
+        return bool
 
 
 class ExceptClause(Expression):

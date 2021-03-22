@@ -809,7 +809,14 @@ class ExpressionParser:
             right_hand, next_token = ExpressionParser.parse(
                 tokens, until_one_of=until_one_of
             )
+            right_alias = None
+            if isinstance(right_hand, Alias):
+                right_alias = right_hand
+                right_hand = right_hand.expression
             expression = BooleanCondition(symbol, left_hand, right_hand)
+            if right_alias is not None:
+                right_alias.expression = expression
+                expression = right_alias
 
         if lower(next_token) == "except":
             opening_parenthesis = next(tokens, None)

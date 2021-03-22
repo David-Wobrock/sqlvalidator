@@ -80,6 +80,8 @@ $ sqlvalidator --validate sql.py
 No invalid queries found.
 ```
 
+To get more details about the found invalid elements, use `--verbose-validate`
+
 ## API / Python code usage
 
 ### SQL Formatting

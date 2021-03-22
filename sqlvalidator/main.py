@@ -30,12 +30,20 @@ def _main() -> None:
         help="format marked SQL queries by overwriting specified files.",
     )
 
-    parser.add_argument("--validate", action="store_true", help="run SQL validation.")
+    validate_group = parser.add_mutually_exclusive_group(required=False)
+    validate_group.add_argument(
+        "--validate", action="store_true", help="run SQL validation."
+    )
+    validate_group.add_argument(
+        "--verbose-validate",
+        action="store_true",
+        help="run SQL validation and display errors.",
+    )
 
     args = parser.parse_args()
     src_inputs = args.SRC
 
-    if not (args.format or args.check_format or args.validate):
+    if not (args.format or args.check_format or args.validate or args.verbose_validate):
         parser.error(
             "at least one argument should be specified "
             "[--format | --check-format | --validate]"
@@ -46,6 +54,7 @@ def _main() -> None:
         format_input=args.format,
         check_input_format=args.check_format,
         validate_input=args.validate,
+        verbose_validate_input=args.verbose_validate,
     )
 
 

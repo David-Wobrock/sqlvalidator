@@ -69,6 +69,7 @@ def handle_inputs(
     format_input: bool,
     check_input_format: bool,
     validate_input: bool,
+    verbose_validate_input: bool,
 ):
     inputs_info = InputSQLAnalyseInfo()
 
@@ -78,6 +79,7 @@ def handle_inputs(
             format_input,
             check_input_format,
             validate_input,
+            verbose_validate_input,
             inputs_info.seen_files,
         )
         inputs_info.update(single_input_info)
@@ -104,6 +106,7 @@ def handle_one_input(
     format_input: bool,
     check_input_format: bool,
     validate_input_format: bool,
+    verbose_validate_input_format: bool,
     seen_files: Set[str],
 ) -> InputSQLAnalyseInfo:
 
@@ -113,6 +116,7 @@ def handle_one_input(
             format_input,
             check_input_format,
             validate_input_format,
+            verbose_validate_input_format,
             seen_files,
         )
     elif os.path.isfile(src_input):
@@ -122,6 +126,7 @@ def handle_one_input(
                 format_input,
                 check_input_format,
                 validate_input_format,
+                verbose_validate_input_format,
                 seen_files,
             )
         except RecursionError:
@@ -137,7 +142,12 @@ def handle_one_input(
 
 
 def analyse_dir(
-    dirname: str, format_input: bool, check: bool, validate: bool, seen_files: Set[str]
+    dirname: str,
+    format_input: bool,
+    check: bool,
+    validate: bool,
+    verbose_validate: bool,
+    seen_files: Set[str],
 ) -> InputSQLAnalyseInfo:
     seen_files = seen_files or set()
     result_infos = InputSQLAnalyseInfo(seen_files=seen_files)
@@ -152,6 +162,7 @@ def analyse_dir(
                         format_input,
                         check,
                         validate,
+                        verbose_validate,
                         result_infos.seen_files,
                     )
                     result_infos.update(file_result_info)
@@ -168,7 +179,12 @@ def analyse_dir(
 
 
 def analyse_file(
-    filename: str, format_input: bool, check: bool, validate: bool, seen_files: Set[str]
+    filename: str,
+    format_input: bool,
+    check: bool,
+    validate: bool,
+    verbose_validate: bool,
+    seen_files: Set[str],
 ) -> InputSQLAnalyseInfo:
     abs_filename = os.path.abspath(filename)
     if abs_filename in seen_files:
@@ -176,7 +192,12 @@ def analyse_file(
     seen_files.add(abs_filename)
 
     with open(filename, "r") as file:
-        count_changed_sql, new_content, count_has_errors = compute_file_content(file)
+        (
+            count_changed_sql,
+            new_content,
+            count_has_errors,
+            errors_locations,
+        ) = compute_file_content(file)
 
     file_changed = count_changed_sql > 0
     if file_changed:
@@ -196,10 +217,13 @@ def analyse_file(
             )
 
     file_has_invalid_sql = count_has_errors > 0
-    if file_has_invalid_sql and validate:
+    if file_has_invalid_sql and (validate or verbose_validate):
         print(
             "invalid queries in {} ({} invalid SQL)".format(filename, count_has_errors)
         )
+        if verbose_validate:
+            for error_lineno, errors in errors_locations:
+                print("L{} - {}".format(error_lineno, ", ".join(errors)))
 
     return InputSQLAnalyseInfo(
         num_changed_files=1 if file_changed else 0,
@@ -210,9 +234,10 @@ def analyse_file(
     )
 
 
-def compute_file_content(file: IO) -> Tuple[int, str, int]:
+def compute_file_content(file: IO) -> Tuple[int, str, int, list]:
     count_changed_sql = 0
     count_has_errors = 0
+    errors_locations = []
     tokens = []
 
     def handle_string_token(
@@ -221,6 +246,7 @@ def compute_file_content(file: IO) -> Tuple[int, str, int]:
         nonlocal tokens
         nonlocal count_changed_sql
         nonlocal count_has_errors
+        nonlocal errors_locations
 
         if not is_select_string(token_value):
             tokens.append((token_type, token_value, starting, ending, line))
@@ -232,13 +258,14 @@ def compute_file_content(file: IO) -> Tuple[int, str, int]:
             token_generator, (None, None, None, None, None)
         )
         if next_token is None:
-            formatted_sql, has_errors = handle_sql_string(token_value)
+            formatted_sql, sql_query = handle_sql_string(token_value)
             tokens.append((token_type, formatted_sql, starting, ending, line))
             tokens += following_tokens
             if formatted_sql != token_value:
                 count_changed_sql += 1
-            if has_errors:
+            if not sql_query.is_valid():
                 count_has_errors += 1
+                errors_locations.append((starting[0], sql_query.errors))
             return
 
         following_tokens.append(
@@ -261,14 +288,25 @@ def compute_file_content(file: IO) -> Tuple[int, str, int]:
             )
 
         if not (
-            next_token == tokenize.COMMENT and NO_SQLFORMAT_COMMENT in next_token_value
+            next_token == tokenize.COMMENT
+            and NO_SQLFORMAT_COMMENT in next_token_value
+            and NO_SQLVALIDATION_COMMENT in next_token_value
         ):
-            formatted_sql, has_errors = handle_sql_string(token_value)
-            tokens.append((token_type, formatted_sql, starting, ending, line))
-            if formatted_sql != token_value:
+            formatted_sql, sql_query = handle_sql_string(token_value)
+            if (
+                formatted_sql != token_value
+                and NO_SQLFORMAT_COMMENT not in next_token_value
+            ):
+                tokens.append((token_type, formatted_sql, starting, ending, line))
                 count_changed_sql += 1
-            if has_errors:
+            else:
+                tokens.append((token_type, token_value, starting, ending, line))
+            if (
+                not sql_query.is_valid()
+                and NO_SQLVALIDATION_COMMENT not in next_token_value
+            ):
                 count_has_errors += 1
+                errors_locations.append((starting[0], sql_query.errors))
 
         else:
             tokens.append((token_type, token_value, starting, ending, line))
@@ -296,10 +334,10 @@ def compute_file_content(file: IO) -> Tuple[int, str, int]:
             tokens.append((token_type, token_value, starting, ending, line))
 
     formatted_file_content = tokenize.untokenize(tokens)
-    return count_changed_sql, formatted_file_content, count_has_errors
+    return count_changed_sql, formatted_file_content, count_has_errors, errors_locations
 
 
-def handle_sql_string(sql_string: str) -> Tuple[str, bool]:
+def handle_sql_string(sql_string: str) -> Tuple[str, sql_validator.SQLQuery]:
     """
     Read a SQL string as input, potentially with quotes or not,
     and analyse it in order to get the formatter content and know if it is valid.
@@ -334,7 +372,6 @@ def handle_sql_string(sql_string: str) -> Tuple[str, bool]:
 
     sql_query = sql_validator.SQLQuery(sql_string_without_quotes)
     formatted_sql = sql_query.format()
-    has_errors = not sql_query.is_valid()
 
     if len(quotes) == 1 and "\n" in formatted_sql:
         # Need to change to triple quotes
@@ -353,7 +390,7 @@ def handle_sql_string(sql_string: str) -> Tuple[str, bool]:
         quoted_sql = "{prefix}{quotes}{sql}{quotes}".format(
             prefix=quotes_prefix or "", quotes=new_quotes, sql=formatted_sql
         )
-    return quoted_sql, has_errors
+    return quoted_sql, sql_query
 
 
 def is_select_string(token_value: str) -> bool:
