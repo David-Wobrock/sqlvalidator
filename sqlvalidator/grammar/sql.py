@@ -293,7 +293,11 @@ class GroupByClause(Expression):
                 )
             elif (
                 isinstance(arg, (Column, String))
-                and arg.value not in known_fields
+                and (
+                    arg.value not in known_fields
+                    and arg.value
+                    not in [e.alias for e in select_expressions if isinstance(e, Alias)]
+                )
                 and "*" not in known_fields
             ):
                 errors.append('column "{}" does not exist'.format(arg.value))
