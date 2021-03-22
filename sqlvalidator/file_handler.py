@@ -125,10 +125,10 @@ def handle_one_input(
                 seen_files,
             )
         except RecursionError:
-            print("could not format {}".format(src_input))
+            print("could not analyse {}".format(src_input))
             result_info = InputSQLAnalyseInfo()
         except Exception as e:
-            print("error formatting {} ({}: {})".format(src_input, type(e).__name__, e))
+            print("error analysing {} ({}: {})".format(src_input, type(e).__name__, e))
             result_info = InputSQLAnalyseInfo()
     else:
         print("Error: Invalid input")
@@ -156,10 +156,10 @@ def analyse_dir(
                     )
                     result_infos.update(file_result_info)
                 except RecursionError:
-                    print("could not format {}".format(abs_filename))
+                    print("could not analyse {}".format(abs_filename))
                 except Exception as e:
                     print(
-                        "error formatting {} ({}: {})".format(
+                        "error analysing {} ({}: {})".format(
                             abs_filename, type(e).__name__, e
                         )
                     )

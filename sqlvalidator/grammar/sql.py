@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional, Set
 
 from sqlvalidator.grammar.tokeniser import lower
 
@@ -110,16 +110,16 @@ class SelectStatement:
             statement_str += ";"
         return statement_str
 
-    def validate(self):
+    def validate(self, known_fields: Optional[Set[str]] = None) -> list:
         errors = []
+        known_fields = known_fields or set()
+
         if isinstance(self.from_statement, Parenthesis) and isinstance(
             self.from_statement.args[0], SelectStatement
         ):
-            known_fields = self.from_statement.args[0].known_fields
+            known_fields = known_fields | self.from_statement.args[0].known_fields
         elif isinstance(self.from_statement, Table):
-            known_fields = {"*"}
-        else:
-            known_fields = set()
+            known_fields = known_fields | {"*"}
 
         for e in self.expressions:
             errors += e.validate(known_fields)
@@ -138,13 +138,16 @@ class SelectStatement:
         return errors
 
     @property
-    def known_fields(self):
-        fields = []
+    def known_fields(self) -> Set[str]:
+        fields = set()
         for e in self.expressions:
             if isinstance(e, Column):
-                fields.append(e.value)
+                fields.add(e.value)
             elif isinstance(e, Alias):
-                fields.append(e.alias)
+                if isinstance(e.alias, Column):
+                    fields.add(e.alias.value)
+                else:
+                    fields.add(e.alias)
         return fields
 
     def __eq__(self, other):
@@ -219,7 +222,7 @@ class Expression:
     def __eq__(self, other):
         return type(self) == type(other) and self.value == other.value
 
-    def validate(self, known_fields):
+    def validate(self, known_fields: Set[str]) -> list:
         return []
 
     @property
@@ -236,7 +239,7 @@ class WhereClause(Expression):
             return "\n " + transformed_value.replace("\n", "\n ")
         return " " + transformed_value
 
-    def validate(self, known_fields):
+    def validate(self, known_fields: Set[str]) -> list:
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
         if self.value.return_type != bool:
