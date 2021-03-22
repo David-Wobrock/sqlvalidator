@@ -37,7 +37,8 @@ def _main() -> None:
 
     if not (args.format or args.check_format or args.validate):
         parser.error(
-            "at least one argument should be specified [--format | --check-format | --validate]"
+            "at least one argument should be specified "
+            "[--format | --check-format | --validate]"
         )
 
     file_handler.handle_inputs(

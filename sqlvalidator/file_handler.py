@@ -118,7 +118,11 @@ def handle_one_input(
     elif os.path.isfile(src_input):
         try:
             result_info = analyse_file(
-                src_input, format_input, check_input_format, validate_input_format, seen_files
+                src_input,
+                format_input,
+                check_input_format,
+                validate_input_format,
+                seen_files,
             )
         except RecursionError:
             print("could not format {}".format(src_input))
