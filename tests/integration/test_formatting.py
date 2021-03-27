@@ -1927,3 +1927,16 @@ FROM table
 JOIN other_table
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_string_alias():
+    sql = "select x `alias`, y \"alias\", z 'alias', 'col' AS 'alias' from t"
+    expected = """
+SELECT
+ x `alias`,
+ y "alias",
+ z 'alias',
+ 'col' AS 'alias'
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()

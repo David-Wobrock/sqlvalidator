@@ -180,7 +180,7 @@ class FromStatementParser:
                 argument = FromStatementParser.parse(iter(argument_tokens))
             expression = Parenthesis(argument)
             next_token = next(tokens, None)
-        elif next_token == "'" or next_token == '"' or next_token == "`":
+        elif next_token in String.QUOTES:
             table_name = StringParser.parse(tokens, next_token)
             next_token = next(tokens, None)
             while next_token == ".":
@@ -220,6 +220,8 @@ class FromStatementParser:
             else:
                 with_as = False
                 alias = next_token
+            if alias in String.QUOTES:
+                alias = StringParser.parse(tokens, alias)
             expression = Alias(expression, alias, with_as)
             next_token = next(tokens, None)
 
@@ -250,6 +252,8 @@ class FromStatementParser:
                 else:
                     with_as = False
                     alias = next_token
+                if alias in String.QUOTES:
+                    alias = StringParser.parse(tokens, alias)
                 expression = Alias(expression, alias, with_as)
                 next_token = next(tokens, None)
 
@@ -290,6 +294,8 @@ class FromStatementParser:
                 else:
                     with_as = False
                     alias = next_token
+                if alias in String.QUOTES:
+                    alias = StringParser.parse(tokens, alias)
                 expression = Alias(expression, alias, with_as)
                 next_token = next(tokens, None)
 
@@ -325,6 +331,8 @@ class UnnestParser:
             else:
                 with_as = False
                 alias = next_token
+            if alias in String.QUOTES:
+                alias = StringParser.parse(tokens, alias)
             expression = Alias(expression, alias, with_as)
             next_token = next(tokens, None)
 
@@ -828,9 +836,9 @@ class ExpressionParser:
         if (
             next_token is not None
             and next_token != ")"
-            and next_token != "'"
-            and next_token != '"'
-            and next_token != "`"
+            and not (
+                next_token in String.QUOTES and isinstance(expression, String)
+            )
             and next_token != ";"
             and lower(next_token) not in until_one_of
             and can_alias
@@ -843,6 +851,8 @@ class ExpressionParser:
             else:
                 with_as = False
                 alias = next_token
+            if alias in String.QUOTES:
+                alias = StringParser.parse(tokens, alias)
             return Alias(expression, alias, with_as), next(tokens, None)
         return expression, next_token
 
