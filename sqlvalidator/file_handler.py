@@ -57,10 +57,10 @@ class InputSQLAnalyseInfo:
         self.seen_files = seen_files or set()
 
     def update(self, other_sql_analyse_info):
-        self.num_changed_files = other_sql_analyse_info.num_changed_files
-        self.num_changed_sql = other_sql_analyse_info.num_changed_sql
-        self.num_invalid_files = other_sql_analyse_info.num_invalid_files
-        self.num_invalid_sql = other_sql_analyse_info.num_invalid_sql
+        self.num_changed_files += other_sql_analyse_info.num_changed_files
+        self.num_changed_sql += other_sql_analyse_info.num_changed_sql
+        self.num_invalid_files += other_sql_analyse_info.num_invalid_files
+        self.num_invalid_sql += other_sql_analyse_info.num_invalid_sql
         self.seen_files |= other_sql_analyse_info.seen_files
 
 
