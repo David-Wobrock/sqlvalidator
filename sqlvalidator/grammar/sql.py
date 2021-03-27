@@ -1149,6 +1149,11 @@ class Join(Expression):
             self.using,
         )
 
+    def validate(self, known_fields: Set[str]) -> list:
+        errors = super().validate(known_fields)
+        if self.join_type not in ("CROSS JOIN", ",") and not (self.using or self.on):
+            errors.append("Missing ON or USING for join")
+
 
 class CombinedQueries(Expression):
     SET_OPERATORS = ("union", "intersect", "except", "all")

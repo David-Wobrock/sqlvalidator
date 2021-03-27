@@ -1917,3 +1917,13 @@ SELECT COUNT(1) = COUNTIF(date >= DATE('1994-04-11')) num_recent
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_invalid_join_missing_using_or_on():
+    sql = "SELECT field FROM table JOIN other_table"
+    expected = """
+SELECT field
+FROM table
+JOIN other_table
+"""
+    assert format_sql(sql) == expected.strip()
