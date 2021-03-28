@@ -836,9 +836,7 @@ class ExpressionParser:
         if (
             next_token is not None
             and next_token != ")"
-            and not (
-                next_token in String.QUOTES and isinstance(expression, String)
-            )
+            and not (next_token in String.QUOTES and isinstance(expression, String))
             and next_token != ";"
             and lower(next_token) not in until_one_of
             and can_alias

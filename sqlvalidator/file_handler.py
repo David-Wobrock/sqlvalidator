@@ -197,7 +197,9 @@ def analyse_file(
             new_content,
             count_has_errors,
             errors_locations,
-        ) = compute_file_content(file, format_input or check, validate or verbose_validate)
+        ) = compute_file_content(
+            file, format_input or check, validate or verbose_validate
+        )
 
     file_changed = count_changed_sql > 0
     if file_changed:
@@ -234,7 +236,9 @@ def analyse_file(
     )
 
 
-def compute_file_content(file: IO, should_format: bool, should_validate: bool) -> Tuple[int, str, int, list]:
+def compute_file_content(
+    file: IO, should_format: bool, should_validate: bool
+) -> Tuple[int, str, int, list]:
     count_changed_sql = 0
     count_has_errors = 0
     errors_locations = []
@@ -288,12 +292,10 @@ def compute_file_content(file: IO, should_format: bool, should_validate: bool) -
             )
 
         needs_format = should_format and NO_SQLFORMAT_COMMENT not in next_token_value
-        needs_validate = should_validate and NO_SQLVALIDATION_COMMENT not in next_token_value
-        if (
-            next_token != tokenize.COMMENT
-            or needs_format
-            or needs_validate
-        ):
+        needs_validate = (
+            should_validate and NO_SQLVALIDATION_COMMENT not in next_token_value
+        )
+        if next_token != tokenize.COMMENT or needs_format or needs_validate:
             formatted_sql, sql_query = handle_sql_string(token_value)
             if (
                 formatted_sql != token_value
