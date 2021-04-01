@@ -1153,6 +1153,7 @@ class Join(Expression):
         errors = super().validate(known_fields)
         if self.join_type not in ("CROSS JOIN", ",") and not (self.using or self.on):
             errors.append("Missing ON or USING for join")
+        return errors
 
 
 class CombinedQueries(Expression):
