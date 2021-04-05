@@ -1940,3 +1940,15 @@ SELECT
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_index_chained_column():
+    sql = """select field.`col`[SAFE_OFFSET(2)] from t where
+    field.`col`[SAFE_OFFSET(2)] IS NOT NULL;
+    """
+    expected = """
+SELECT field.`col`[SAFE_OFFSET(2)]
+FROM t
+WHERE field.`col`[SAFE_OFFSET(2)] IS NOT NULL;
+"""
+    assert format_sql(sql) == expected.strip()

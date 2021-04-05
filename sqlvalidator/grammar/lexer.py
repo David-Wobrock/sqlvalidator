@@ -759,6 +759,13 @@ class ExpressionParser:
                 tokens, is_right_hand=True, until_one_of=until_one_of
             )
             expression = ChainedColumns(expression, right_hand)
+            if next_token is not None and next_token == "[":
+                argument_tokens, next_token = get_tokens_until_one_of(
+                    tokens, stop_words=["]"]
+                )
+                arguments = ExpressionListParser.parse(iter(argument_tokens))
+                expression = Index(expression, arguments)
+                next_token = next(tokens, None)
 
         if is_right_hand:
             return expression, next_token
