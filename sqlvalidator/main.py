@@ -1,6 +1,6 @@
 import argparse
 
-from sqlvalidator import file_formatter
+from sqlvalidator import file_handler
 
 __version__ = "0.0.15"
 
@@ -14,7 +14,7 @@ def _main() -> None:
         "--version", action="version", version="sqlvalidator " + __version__
     )
 
-    format_group = parser.add_mutually_exclusive_group(required=True)
+    format_group = parser.add_mutually_exclusive_group(required=False)
     format_group.add_argument(
         "--check-format",
         action="store_true",
@@ -30,11 +30,31 @@ def _main() -> None:
         help="format marked SQL queries by overwriting specified files.",
     )
 
+    validate_group = parser.add_mutually_exclusive_group(required=False)
+    validate_group.add_argument(
+        "--validate", action="store_true", help="run SQL validation."
+    )
+    validate_group.add_argument(
+        "--verbose-validate",
+        action="store_true",
+        help="run SQL validation and display errors.",
+    )
+
     args = parser.parse_args()
     src_inputs = args.SRC
 
-    file_formatter.handle_inputs(
-        src_inputs, format_input=args.format, check_input=args.check_format
+    if not (args.format or args.check_format or args.validate or args.verbose_validate):
+        parser.error(
+            "at least one argument should be specified "
+            "[--format | --check-format | --validate]"
+        )
+
+    file_handler.handle_inputs(
+        src_inputs,
+        format_input=args.format,
+        check_input_format=args.check_format,
+        validate_input=args.validate,
+        verbose_validate_input=args.verbose_validate,
     )
 
 

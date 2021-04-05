@@ -251,3 +251,13 @@ def test_offset_negative():
 def test_offset_variable():
     sql = "SELECT 1 from table OFFSET (x)"
     assert_invalid_sql(sql)
+
+
+def test_group_by_alias():
+    sql = "SELECT x + y f0 FROM (select x, y from table) GROUP BY f0"
+    assert_valid_sql(sql)
+
+
+def test_invalid_join_missing_using_or_on():
+    sql = "SELECT field FROM table JOIN other_table"
+    assert_invalid_sql(sql)

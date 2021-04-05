@@ -68,7 +68,19 @@ The option is meant to be used within the CI/CD pipeline and ensure that SQL sta
 
 ### SQL Validation
 
-TODO, no CLI option has been implemented yet.
+One can verify that the files SQL is valid:
+```
+$ sqlvalidator --validate sql.py
+invalid queries in sql.py (1 invalid SQL)
+1 file detected with invalid SQL (1 invalid SQL queries).
+
+# ... do some manual fixes to the SQL ...
+
+$ sqlvalidator --validate sql.py
+No invalid queries found.
+```
+
+To get more details about the found invalid elements, use `--verbose-validate`
 
 ## API / Python code usage
 

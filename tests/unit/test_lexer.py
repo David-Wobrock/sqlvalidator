@@ -916,3 +916,17 @@ def test_empty_list_with_alias():
     actual, _ = ExpressionParser.parse(to_tokens("[] x"))
     expected = Alias(Array(), with_as=False, alias="x")
     assert actual == expected
+
+
+def test_boolean_condition():
+    actual, _ = ExpressionParser.parse(to_tokens("f1 IS NOT NULL AND f2 > 0 fnew"))
+    expected = Alias(
+        BooleanCondition(
+            "AND",
+            Condition(Column("f1"), "is not", Null()),
+            Condition(Column("f2"), ">", Integer(0)),
+        ),
+        with_as=False,
+        alias="fnew",
+    )
+    assert actual == expected

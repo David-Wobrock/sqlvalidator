@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional, Set
 
 from sqlvalidator.grammar.tokeniser import lower
 
@@ -110,16 +110,16 @@ class SelectStatement:
             statement_str += ";"
         return statement_str
 
-    def validate(self):
+    def validate(self, known_fields: Optional[Set[str]] = None) -> list:
         errors = []
+        known_fields = known_fields or set()
+
         if isinstance(self.from_statement, Parenthesis) and isinstance(
             self.from_statement.args[0], SelectStatement
         ):
-            known_fields = self.from_statement.args[0].known_fields
+            known_fields = known_fields | self.from_statement.args[0].known_fields
         elif isinstance(self.from_statement, Table):
-            known_fields = {"*"}
-        else:
-            known_fields = set()
+            known_fields = known_fields | {"*"}
 
         for e in self.expressions:
             errors += e.validate(known_fields)
@@ -138,13 +138,16 @@ class SelectStatement:
         return errors
 
     @property
-    def known_fields(self):
-        fields = []
+    def known_fields(self) -> Set[str]:
+        fields = set()
         for e in self.expressions:
             if isinstance(e, Column):
-                fields.append(e.value)
+                fields.add(e.value)
             elif isinstance(e, Alias):
-                fields.append(e.alias)
+                if isinstance(e.alias, Column):
+                    fields.add(e.alias.value)
+                else:
+                    fields.add(e.alias)
         return fields
 
     def __eq__(self, other):
@@ -219,7 +222,7 @@ class Expression:
     def __eq__(self, other):
         return type(self) == type(other) and self.value == other.value
 
-    def validate(self, known_fields):
+    def validate(self, known_fields: Set[str]) -> list:
         return []
 
     @property
@@ -236,7 +239,7 @@ class WhereClause(Expression):
             return "\n " + transformed_value.replace("\n", "\n ")
         return " " + transformed_value
 
-    def validate(self, known_fields):
+    def validate(self, known_fields: Set[str]) -> list:
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
         if self.value.return_type != bool:
@@ -293,7 +296,11 @@ class GroupByClause(Expression):
                 )
             elif (
                 isinstance(arg, (Column, String))
-                and arg.value not in known_fields
+                and (
+                    arg.value not in known_fields
+                    and arg.value
+                    not in [e.alias for e in select_expressions if isinstance(e, Alias)]
+                )
                 and "*" not in known_fields
             ):
                 errors.append('column "{}" does not exist'.format(arg.value))
@@ -421,11 +428,11 @@ class LimitClause(Expression):
         value = self.value
         while isinstance(value, Parenthesis):
             value = value.value
-        if self.value.return_type != int:
-            errors.append("argument of OFFSET must not contain variables")
+        if value.return_type != int or not isinstance(value, Integer):
+            errors.append("argument of LIMIT must not contain variables")
         else:
             if isinstance(value, Integer) and value.value < 0:
-                errors.append("OFFSET must not be negative")
+                errors.append("LIMIT must not be negative")
         return errors
 
 
@@ -435,11 +442,11 @@ class OffsetClause(Expression):
         value = self.value
         while isinstance(value, Parenthesis):
             value = value.value
-        if self.value.return_type != int:
-            errors.append("argument of LIMIT must be integer")
+        if value.return_type != int or not isinstance(value, Integer):
+            errors.append("argument of OFFSET must be integer")
         else:
             if isinstance(value, Integer) and value.value < 0:
-                errors.append("LIMIT must not be negative")
+                errors.append("OFFSET must not be negative")
         return errors
 
 
@@ -682,6 +689,10 @@ class ChainedColumns(Expression):
             and all(a == o for a, o in zip(self.columns, other.columns))
         )
 
+    @property
+    def return_type(self):
+        return self.columns[0].return_type
+
 
 class Type(Expression):
     VALUES = ("int", "float", "day", "month", "timestamp", "int64", "string", "date")
@@ -885,7 +896,9 @@ class Alias(Expression):
     def transform(self, expression=None):
         expression = expression or self.expression
         return "{}{}{}".format(
-            expression, " AS " if self.with_as else " ", transform(self.alias)
+            transform(expression),
+            " AS " if self.with_as else " ",
+            transform(self.alias),
         )
 
     def __repr__(self):
@@ -905,6 +918,10 @@ class Alias(Expression):
         if isinstance(self.expression, Column):
             errors += self.expression.validate(known_fields)
         return errors
+
+    @property
+    def return_type(self):
+        return self.expression.return_type
 
 
 class Index(Expression):
@@ -947,6 +964,8 @@ class ArithmaticOperator(Expression):
 
     @property
     def return_type(self):
+        if any(isinstance(a, float) for a in self.args):
+            return float
         return int
 
 
@@ -1130,6 +1149,12 @@ class Join(Expression):
             self.using,
         )
 
+    def validate(self, known_fields: Set[str]) -> list:
+        errors = super().validate(known_fields)
+        if self.join_type not in ("CROSS JOIN", ",") and not (self.using or self.on):
+            errors.append("Missing ON or USING for join")
+        return errors
+
 
 class CombinedQueries(Expression):
     SET_OPERATORS = ("union", "intersect", "except", "all")
@@ -1288,7 +1313,7 @@ class BooleanCondition(Expression):
         errors = super().validate(known_fields)
         for a in self.args:
             errors += a.validate(known_fields)
-            if a.return_type != bool:
+            if a.return_type != bool and a.return_type != Any:
                 errors.append(
                     "The argument of {} must be type boolean, not type {}".format(
                         self.type.upper(), a.return_type
@@ -1313,6 +1338,10 @@ class Negation(Expression):
         if not isinstance(self.value, Parenthesis):
             negation += " "
         return negation + transform(self.value)
+
+    @property
+    def return_type(self):
+        return bool
 
 
 class ExceptClause(Expression):

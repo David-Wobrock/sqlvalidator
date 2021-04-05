@@ -180,7 +180,7 @@ class FromStatementParser:
                 argument = FromStatementParser.parse(iter(argument_tokens))
             expression = Parenthesis(argument)
             next_token = next(tokens, None)
-        elif next_token == "'" or next_token == '"' or next_token == "`":
+        elif next_token in String.QUOTES:
             table_name = StringParser.parse(tokens, next_token)
             next_token = next(tokens, None)
             while next_token == ".":
@@ -220,6 +220,8 @@ class FromStatementParser:
             else:
                 with_as = False
                 alias = next_token
+            if alias in String.QUOTES:
+                alias = StringParser.parse(tokens, alias)
             expression = Alias(expression, alias, with_as)
             next_token = next(tokens, None)
 
@@ -250,6 +252,8 @@ class FromStatementParser:
                 else:
                     with_as = False
                     alias = next_token
+                if alias in String.QUOTES:
+                    alias = StringParser.parse(tokens, alias)
                 expression = Alias(expression, alias, with_as)
                 next_token = next(tokens, None)
 
@@ -280,8 +284,6 @@ class FromStatementParser:
             elif lower(on_or_using) == "using":
                 expressions, _ = ExpressionParser.parse(iter(expression_tokens))
                 using = UsingClause(expressions)
-            elif join_type not in ("CROSS JOIN", ","):
-                raise ParsingError("Missing ON or USING for join")
 
             expression = Join(join_type, left_expr, right_expr, on=on, using=using)
 
@@ -292,6 +294,8 @@ class FromStatementParser:
                 else:
                     with_as = False
                     alias = next_token
+                if alias in String.QUOTES:
+                    alias = StringParser.parse(tokens, alias)
                 expression = Alias(expression, alias, with_as)
                 next_token = next(tokens, None)
 
@@ -327,6 +331,8 @@ class UnnestParser:
             else:
                 with_as = False
                 alias = next_token
+            if alias in String.QUOTES:
+                alias = StringParser.parse(tokens, alias)
             expression = Alias(expression, alias, with_as)
             next_token = next(tokens, None)
 
@@ -753,6 +759,13 @@ class ExpressionParser:
                 tokens, is_right_hand=True, until_one_of=until_one_of
             )
             expression = ChainedColumns(expression, right_hand)
+            if next_token is not None and next_token == "[":
+                argument_tokens, next_token = get_tokens_until_one_of(
+                    tokens, stop_words=["]"]
+                )
+                arguments = ExpressionListParser.parse(iter(argument_tokens))
+                expression = Index(expression, arguments)
+                next_token = next(tokens, None)
 
         if is_right_hand:
             return expression, next_token
@@ -809,7 +822,14 @@ class ExpressionParser:
             right_hand, next_token = ExpressionParser.parse(
                 tokens, until_one_of=until_one_of
             )
+            right_alias = None
+            if isinstance(right_hand, Alias):
+                right_alias = right_hand
+                right_hand = right_hand.expression
             expression = BooleanCondition(symbol, left_hand, right_hand)
+            if right_alias is not None:
+                right_alias.expression = expression
+                expression = right_alias
 
         if lower(next_token) == "except":
             opening_parenthesis = next(tokens, None)
@@ -823,9 +843,7 @@ class ExpressionParser:
         if (
             next_token is not None
             and next_token != ")"
-            and next_token != "'"
-            and next_token != '"'
-            and next_token != "`"
+            and not (next_token in String.QUOTES and isinstance(expression, String))
             and next_token != ";"
             and lower(next_token) not in until_one_of
             and can_alias
@@ -838,6 +856,8 @@ class ExpressionParser:
             else:
                 with_as = False
                 alias = next_token
+            if alias in String.QUOTES:
+                alias = StringParser.parse(tokens, alias)
             return Alias(expression, alias, with_as), next(tokens, None)
         return expression, next_token
 
