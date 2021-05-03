@@ -1,0 +1,9 @@
+ - id: sqlvalidator
+   name: sqlvalidator
+   description: SQL queries formatting, syntactic and semantic validation
+   entry: sqlvalidator
+   language: python
+   minimum_pre_commit_version: 2.6.0
+   require_serial: true
+   types: [python]
+   args: [--format]
