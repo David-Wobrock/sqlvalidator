@@ -32,7 +32,7 @@ setup(
     author="David Wobrock",
     author_email="david.wobrock@gmail.com",
     license="MIT",
-    packages=find_packages(exclude=["tests/"]),
+    packages=find_packages(include=["sqlvalidator*"]),
     extras_require={
         "test": [
             "pytest==6.2.4",
