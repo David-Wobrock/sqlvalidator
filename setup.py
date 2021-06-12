@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=["tests/"]),
     extras_require={
         "test": [
-            "pytest==6.1.2",
+            "pytest==6.2.4",
         ]
     },
     keywords=(
