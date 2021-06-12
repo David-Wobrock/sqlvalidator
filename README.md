@@ -1,8 +1,8 @@
 # sqlvalidator
 
-[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FDavid-Wobrock%2Fsqlvalidator%2Fbadge%3Fref%3Dmaster&style=popout)](https://actions-badge.atrox.dev/David-Wobrock/sqlvalidator/goto?ref=master)
+[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FDavid-Wobrock%2Fsqlvalidator%2Fbadge%3Fref%3Dmain&style=popout)](https://actions-badge.atrox.dev/David-Wobrock/sqlvalidator/goto?ref=main)
 [![PyPI](https://img.shields.io/pypi/v/sqlvalidator.svg)](https://pypi.python.org/pypi/sqlvalidator/)
-[![codecov](https://codecov.io/gh/David-Wobrock/sqlvalidator/branch/master/graph/badge.svg?token=WTORMKIIMU)](https://codecov.io/gh/David-Wobrock/sqlvalidator)
+[![codecov](https://codecov.io/gh/David-Wobrock/sqlvalidator/branch/main/graph/badge.svg?token=WTORMKIIMU)](https://codecov.io/gh/David-Wobrock/sqlvalidator)
 
 SQL queries formatting, syntactic and semantic validation
 
