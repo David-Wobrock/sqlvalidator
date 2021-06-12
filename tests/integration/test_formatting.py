@@ -1964,3 +1964,20 @@ FROM t
 GROUP EACH BY f;
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_plain_join_each():
+    sql = """
+SELECT field
+FROM table JOIN EACH (select * from other_table) USING (field)
+"""
+    expected = """
+SELECT field
+FROM table
+JOIN EACH (
+ SELECT *
+ FROM other_table
+)
+USING (field)
+"""
+    assert format_sql(sql) == expected.strip()
