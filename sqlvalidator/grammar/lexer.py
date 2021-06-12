@@ -112,12 +112,17 @@ class SelectStatementParser:
 
         if lower(next_token) == "group":
             next_token = next(tokens, None)
+            group_each_by = False
+            if lower(next_token) == "each":
+                group_each_by = True
+                next_token = next(tokens, None)
             if not lower(next_token) == "by":
                 raise ParsingError("Missing BY after GROUP")
             expression_tokens, next_token = get_tokens_until_one_of(
                 tokens, ["having", "order", "limit", "offset", ";"]
             )
             group_by_clause = GroupByParser.parse(iter(expression_tokens))
+            group_by_clause.group_each_by = group_each_by
         else:
             group_by_clause = None
 

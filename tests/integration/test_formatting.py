@@ -1952,3 +1952,15 @@ FROM t
 WHERE field.`col`[SAFE_OFFSET(2)] IS NOT NULL;
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_group_each_by():
+    sql = "select f, sum(s) from t group each by f;"
+    expected = """
+SELECT
+ f,
+ SUM(s)
+FROM t
+GROUP EACH BY f;
+"""
+    assert format_sql(sql) == expected.strip()

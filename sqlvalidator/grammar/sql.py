@@ -90,7 +90,10 @@ class SelectStatement:
             statement_str += "\nWHERE{}".format(transform(self.where_clause))
 
         if self.group_by_clause:
-            statement_str += "\nGROUP BY{}".format(transform(self.group_by_clause))
+            statement_str += "\nGROUP {}BY{}".format(
+                "EACH " if self.group_by_clause.group_each_by else "",
+                transform(self.group_by_clause),
+            )
 
         if self.having_clause:
             statement_str += "\nHAVING{}".format(transform(self.having_clause))
@@ -258,6 +261,7 @@ class GroupByClause(Expression):
     def __init__(self, *args, rollup=False):
         self.args = args
         self.rollup = rollup
+        self.group_each_by = False
 
     def __str__(self):
         if len(self.args) > 1:
@@ -281,6 +285,7 @@ class GroupByClause(Expression):
             and len(self.args) == len(other.args)
             and all(a == o for a, o in zip(self.args, other.args))
             and self.rollup == other.rollup
+            and self.group_each_by == other.group_each_by
         )
 
     def validate(self, known_fields, select_expressions):
