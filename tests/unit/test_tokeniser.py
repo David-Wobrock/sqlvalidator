@@ -18,6 +18,10 @@ def test_split_with_sep():
     assert list(split_with_sep("a,b", ",")) == ["a", ",", "b"]
 
 
+def test_split_with_escaped_sep():
+    assert list(split_with_sep("a,b\\,c", ",")) == ["a", ",", "b\\,c"]
+
+
 def test_function_tokenizer():
     value = "foo('BAR FOZ')"
     assert list(to_tokens(value)) == ["foo", "(", "'", "BAR FOZ", "'", ")"]
@@ -86,6 +90,16 @@ def test_index():
 def test_chained_columns():
     value = "x.y.z"
     assert list(to_tokens(value)) == ["x", ".", "y", ".", "z"]
+
+
+def test_escaped_string():
+    value = "'O\\'Connor'"
+    assert list(to_tokens(value)) == ["'", "O\\'Connor", "'"]
+
+
+def test_escaped_string_with_keyword():
+    value = "name = 'O\\'Connor'"
+    assert list(to_tokens(value)) == ["name", "=", "'", "O\\'Connor", "'"]
 
 
 def test_keep_tokens_in():

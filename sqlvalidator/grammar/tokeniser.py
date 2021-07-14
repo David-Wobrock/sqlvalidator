@@ -81,13 +81,30 @@ def get_tokens_until_not_in(tokens, kept_words, first_token=None):
 
 
 def split_with_sep(s: str, sep: str):
-    splitted = s.split(sep)
+    splitted = split_with_escaping(s, sep)
     for word in splitted[:-1]:
         if word:
             yield word
         yield sep
     if splitted[-1]:
         yield splitted[-1]
+
+
+def split_with_escaping(s: str, sep: str):
+    splitted = []
+    split_iterator = iter(s.split(sep))
+    value = next(split_iterator, None)
+    while value is not None:
+        # Glue values together if defined
+        if value.endswith("\\"):
+            value += sep
+            next_value = next(split_iterator, None)
+            if next_value:
+                value += next_value
+        # Add to list, and keep looping
+        splitted.append(value)
+        value = next(split_iterator, None)
+    return splitted
 
 
 def merge_stream(s, goals):

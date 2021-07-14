@@ -1981,3 +1981,15 @@ JOIN EACH (
 USING (field)
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_escaped_char():
+    sql = """
+select id from users WHERE name = 'O\\'Connor'
+"""
+    expected = """
+SELECT id
+FROM users
+WHERE name = 'O\\'Connor'
+"""
+    assert format_sql(sql) == expected.strip()
