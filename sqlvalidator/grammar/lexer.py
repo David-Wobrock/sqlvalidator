@@ -43,6 +43,8 @@ from sqlvalidator.grammar.sql import (
     UsingClause,
     WhereClause,
     WindowFrameClause,
+    WithQuery,
+    WithStatement,
 )
 from sqlvalidator.grammar.tokeniser import (
     get_tokens_until_closing_parenthesis,
@@ -62,6 +64,8 @@ class SQLStatementParser:
         next_token = next(tokens)
         if lower(next_token) == "select":
             return SelectStatementParser.parse(tokens)
+        if lower(next_token) == "with":
+            return WithStatementParser.parse(tokens)
         raise ParsingError
 
 
@@ -373,6 +377,29 @@ class UnnestParser:
             ),
             next_token,
         )
+
+
+class WithStatementParser:
+    @staticmethod
+    def parse(tokens):
+        with_queries = []
+
+        with_query_name = None
+        while lower(with_query_name) != "select":
+            with_query_name = next(tokens)
+            next_token = next(tokens)
+            assert lower(next_token) == "as", next_token
+            next_token = next(tokens)
+            assert lower(next_token) == "(", next_token
+            with_statement = SQLStatementParser.parse(
+                iter(get_tokens_until_closing_parenthesis(tokens))
+            )
+
+            with_queries.append(WithQuery(with_query_name, with_statement))
+            with_query_name = next(tokens)
+
+        select_statement = SelectStatementParser.parse(tokens)
+        return WithStatement(with_queries, select_statement)
 
 
 class SetOperatorTypeParser:

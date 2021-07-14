@@ -2033,3 +2033,95 @@ GROUP BY
  name
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_with_statement():
+    sql = """
+with tmp_t as (select id, sum(n) from t group by id)
+select id, count(*) from myt
+join tmp_t using (id)
+group by id"""
+    expected = """
+WITH tmp_t AS (
+ SELECT
+  id,
+  SUM(n)
+ FROM t
+ GROUP BY id
+)
+SELECT
+ id,
+ COUNT(*)
+FROM myt
+JOIN tmp_t
+USING (id)
+GROUP BY id
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_multiple_with_statements():
+    sql = """
+    WITH regional_sales AS (
+        SELECT region, SUM(amount) AS total_sales
+        FROM orders GROUP BY region
+     ), top_regions AS (
+        SELECT region FROM regional_sales
+        WHERE total_sales > (SELECT SUM(total_sales)/10 FROM regional_sales)
+     )
+SELECT region, product,
+       SUM(quantity) AS product_units,
+       SUM(amount) AS product_sales
+FROM orders WHERE region IN (SELECT region FROM top_regions)
+GROUP BY region, product;"""
+    expected = """
+WITH regional_sales AS (
+ SELECT
+  region,
+  SUM(amount) AS total_sales
+ FROM orders
+ GROUP BY region
+),
+top_regions AS (
+ SELECT region
+ FROM regional_sales
+ WHERE
+  total_sales > (
+   SELECT SUM(total_sales) / 10
+   FROM regional_sales
+  )
+)
+SELECT
+ region,
+ product,
+ SUM(quantity) AS product_units,
+ SUM(amount) AS product_sales
+FROM orders
+WHERE
+ region IN (
+  SELECT region
+  FROM top_regions
+ )
+GROUP BY
+ region,
+ product;
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_nested_with_statement():
+    sql = """
+select * from
+( with t as ( select 1 foo ) select * from t )
+"""
+    expected = """
+SELECT *
+FROM (
+ WITH t AS (
+  SELECT 1 foo
+ )
+ SELECT *
+ FROM t
+)
+"""
+    assert format_sql(sql) == expected.strip()

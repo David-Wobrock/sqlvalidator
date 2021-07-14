@@ -1,4 +1,4 @@
-from typing import Any, Optional, Set
+from typing import Any, List, Optional, Set
 
 from sqlvalidator.grammar.tokeniser import lower
 
@@ -453,6 +453,46 @@ class OffsetClause(Expression):
             if isinstance(value, Integer) and value.value < 0:
                 errors.append("OFFSET must not be negative")
         return errors
+
+
+class WithQuery(Expression):
+    def __init__(self, name: str, statement: SelectStatement):
+        self.name = name
+        # todo: column name, for recursivity
+        self.statement = statement
+
+    def __str__(self):
+        return "{} AS (\n{}\n)".format(
+            self.name, self.statement.transform(is_subquery=True)
+        )
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.name == other.name
+            and self.statement == other.statement
+        )
+
+
+class WithStatement(Expression):
+    def __init__(self, with_queries: List[WithQuery], select_statement):
+        # todo: recursive
+        self.with_queries = with_queries
+        self.select_statement = select_statement
+
+    def transform(self):
+        return "WITH {}\n{}".format(
+            ",\n".join(map(transform, self.with_queries)),
+            transform(self.select_statement),
+        )
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and len(self.with_queries) == len(other.with_queries)
+            and all(a == o for a, o in zip(self.with_queries, other.with_queries))
+            and self.select_statement == other.select_statement
+        )
 
 
 class FunctionCall(Expression):
