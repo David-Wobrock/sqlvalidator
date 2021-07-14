@@ -561,6 +561,24 @@ class ArrayAggFunctionCall(FunctionCall):
         return array_agg_str + ")"
 
 
+class FilteredFunctionCall(Expression):
+    def __init__(self, function_call: FunctionCall, filter_condition):
+        self.function_call = function_call
+        self.filter_condition = filter_condition
+
+    def __str__(self):
+        return "{} FILTER (WHERE {})".format(
+            transform(self.function_call), transform(self.filter_condition)
+        )
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.function_call == other.function_call
+            and self.filter_condition == other.filter_condition
+        )
+
+
 class AnalyticsClause(Expression):
     def __init__(self, function, partition_by, order_by, frame_clause):
         self.function = function

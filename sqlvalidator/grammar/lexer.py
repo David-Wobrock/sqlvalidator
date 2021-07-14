@@ -19,6 +19,7 @@ from sqlvalidator.grammar.sql import (
     DatePartExtraction,
     ExceptClause,
     Expression,
+    FilteredFunctionCall,
     Float,
     FunctionCall,
     GroupByClause,
@@ -663,7 +664,21 @@ class ExpressionParser:
                         iter(argument_tokens), can_be_type=arguments_can_be_type
                     )
                     expression = FunctionCall(main_token, *arguments)
+
                 next_token = next(tokens, None)
+                if next_token and lower(next_token) == "filter":
+                    next_next_token = next(tokens)
+                    assert next_next_token == "(", next_next_token
+                    argument_tokens = get_tokens_until_closing_parenthesis(tokens)
+                    assert lower(argument_tokens[0]) == "where", argument_tokens
+                    filter_condition, next_token = ExpressionParser.parse(
+                        iter(argument_tokens[1:]),
+                        can_alias=False,
+                    )
+
+                    expression = FilteredFunctionCall(expression, filter_condition)
+                    next_token = next(tokens, None)
+
             elif (
                 next_token is not None
                 and lower(main_token) in DatePartExtraction.PARTS

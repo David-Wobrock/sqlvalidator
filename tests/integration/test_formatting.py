@@ -1993,3 +1993,43 @@ FROM users
 WHERE name = 'O\\'Connor'
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_filter_where():
+    sql = "select count(1) filter (where active = true) from users"
+    expected = """
+SELECT COUNT(1) FILTER (WHERE active = TRUE)
+FROM users
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_filter_where_alias():
+    sql = "select id, count(1) filter (where active = true) c from users group by id"
+    expected = """
+SELECT
+ id,
+ COUNT(1) FILTER (WHERE active = TRUE) c
+FROM users
+GROUP BY id
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_filter_where_alias_as():
+    sql = (
+        "select id c0, count(1) filter (where active = true and ok) as c1,"
+        "count(1) filter (WHERE 1 =1 or 2=1) as c2, name from users group by id, name"
+    )
+    expected = """
+SELECT
+ id c0,
+ COUNT(1) FILTER (WHERE active = TRUE AND ok) AS c1,
+ COUNT(1) FILTER (WHERE 1 = 1 OR 2 = 1) AS c2,
+ name
+FROM users
+GROUP BY
+ id,
+ name
+"""
+    assert format_sql(sql) == expected.strip()
