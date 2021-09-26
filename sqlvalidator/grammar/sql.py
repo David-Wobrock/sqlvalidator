@@ -126,6 +126,8 @@ class SelectStatement:
 
         for e in self.expressions:
             errors += e.validate(known_fields)
+        if self.from_statement:
+            errors += self.from_statement.validate(known_fields=set())
         if self.where_clause:
             errors += self.where_clause.validate(known_fields)
         if self.group_by_clause:
@@ -151,6 +153,16 @@ class SelectStatement:
                     fields.add(e.alias.value)
                 else:
                     fields.add(e.alias)
+
+        if self.from_statement:
+            if isinstance(self.from_statement, Parenthesis) and isinstance(
+                self.from_statement.args[0], SelectStatement
+            ):
+                subquery_known_fields = self.from_statement.args[0].known_fields
+                if "*" in fields and "*" not in subquery_known_fields:
+                    fields.remove("*")
+                    fields |= subquery_known_fields
+
         return fields
 
     def __eq__(self, other):
@@ -518,6 +530,12 @@ class FunctionCall(Expression):
             function_str += ", ".join(transformed_args) + ")"
         return function_str
 
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        for a in self.args:
+            errors += a.validate(known_fields)
+        return errors
+
     def __repr__(self):
         return "<FunctionCall {} - {}>".format(
             self.function_name, ", ".join(map(repr, self.args))
@@ -546,14 +564,14 @@ class CastFunctionCall(FunctionCall):
 
 class CountFunctionCall(FunctionCall):
     def __init__(self, *args, distinct=False):
-        super().__init__("count", args)
+        super().__init__("count", *args)
         self.distinct = distinct
 
     def __str__(self):
         return "{}({}{})".format(
             self.function_name.upper(),
             "DISTINCT " if self.distinct else "",
-            ", ".join(map(transform, *self.args)),
+            ", ".join(map(transform, self.args)),
         )
 
     def __eq__(self, other):
@@ -730,7 +748,11 @@ class Column(Expression):
 
     def validate(self, known_fields):
         errors = super().validate(known_fields)
-        if self.value not in known_fields and "*" not in known_fields:
+        if (
+            self.value not in known_fields
+            and self.value != "*"
+            and "*" not in known_fields
+        ):
             errors.append("The column {} was not found".format(self.value))
         return errors
 
@@ -978,8 +1000,7 @@ class Alias(Expression):
 
     def validate(self, known_fields):
         errors = super().validate(known_fields)
-        if isinstance(self.expression, Column):
-            errors += self.expression.validate(known_fields)
+        errors += self.expression.validate(known_fields)
         return errors
 
     @property

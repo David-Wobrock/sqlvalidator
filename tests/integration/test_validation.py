@@ -36,9 +36,9 @@ def test_nested_select_without_field():
     assert_invalid_sql(sql)
 
 
-def test_nested_select_with_start():
+def test_nested_select_with_star():
     sql = "SELECT * FROM (SELECT field1 FROM table)"
-    assert_invalid_sql(sql)
+    assert_valid_sql(sql)
 
 
 def test_no_from_with_field():
@@ -260,4 +260,67 @@ def test_group_by_alias():
 
 def test_invalid_join_missing_using_or_on():
     sql = "SELECT field FROM table JOIN other_table"
+    assert_invalid_sql(sql)
+
+
+def test_functioncall_expressions_missing_from_subquery():
+    sql = """
+    select APPROX_COUNT_DISTINCT(IF(field <> 0, column , NULL)) f_0
+    from (
+    select x from table)
+    """
+    assert_invalid_sql(sql)
+
+
+def test_functioncall_expressions_in_subquery():
+    sql = """
+    select APPROX_COUNT_DISTINCT(IF(field <> 0, column , NULL)) f_0
+    from (
+    select field, (a+b) * x column from table)
+    """
+    assert_valid_sql(sql)
+
+
+def test_functioncall_expressions_in_subquery_star():
+    sql = """
+    select APPROX_COUNT_DISTINCT(IF(field <> 0, column , NULL)) f_0
+    from (
+    select * from table)
+    """
+    assert_valid_sql(sql)
+
+
+def test_missing_nested_subquery_columns():
+    sql = """
+    select x
+    from (
+    select x from (select field, column from table))
+    """
+    assert_invalid_sql(sql)
+
+
+def test_nested_subquery_columns():
+    sql = """
+    select x
+    from (
+    select x from (select x from table))
+    """
+    assert_valid_sql(sql)
+
+
+def test_nested_subquery_columns_star():
+    sql = """
+    select x
+    from (
+    select * from (select x from table))
+    """
+    assert_valid_sql(sql)
+
+
+def test_missing_nested_subquery_columns_star():
+    sql = """
+    select x
+    from (
+    select * from (select field from table))
+    """
     assert_invalid_sql(sql)
