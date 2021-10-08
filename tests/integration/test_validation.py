@@ -3,15 +3,17 @@ from sqlvalidator.testing import assert_valid_sql, assert_invalid_sql
 
 
 def test_assert_valid_sql():
-    sql = "SELECT FROM"
+    assert_valid_sql("SELECT * FROM table")
+
     with pytest.raises(AssertionError):
-        assert_valid_sql(sql)
+        assert_valid_sql("SELECT FROM")
 
 
 def test_assert_invalid_sql():
-    sql = "SELECT * FROM table"
+    assert_invalid_sql("SELECT FROM")
+
     with pytest.raises(AssertionError):
-        assert_invalid_sql(sql)
+        assert_invalid_sql("SELECT * FROM table")
 
 
 def test_select_star_from():
