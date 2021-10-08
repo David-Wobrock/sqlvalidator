@@ -109,8 +109,8 @@ You can also validate queries in your tests framework:
 from sqlvalidator.testing import assert_valid_sql, assert_invalid_sql
 
 def test_your_custom_query():
-    sql = "SELECT * FROM table"
-    assert_valid_sql(sql)
+    q = "SELECT * FROM table"
+    assert_valid_sql(q)
 ```
 
 **Warning**: only a limited set of validation are implemented.
