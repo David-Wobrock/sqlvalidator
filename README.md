@@ -103,6 +103,16 @@ if not sql_query.is_valid():
     print(sql_query.errors)
 ```
 
+You can also validate queries in your tests framework:
+
+```python
+from sqlvalidator.testing import assert_valid_sql, assert_invalid_sql
+
+def test_your_custom_query():
+    sql = "SELECT * FROM table"
+    assert_valid_sql(sql)
+```
+
 **Warning**: only a limited set of validation are implemented.
 
 ## Details about SQL Validation
