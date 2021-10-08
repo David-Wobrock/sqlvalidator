@@ -1,14 +1,17 @@
-import sqlvalidator
+import pytest
+from sqlvalidator.testing import assert_valid_sql, assert_invalid_sql
 
 
-def assert_valid_sql(sql):
-    sql_query = sqlvalidator.parse(sql)
-    assert sql_query.is_valid() is True, sql_query.errors
+def test_assert_valid_sql():
+    sql = "SELECT field2 FROM (SELECT field1 FROM table)"
+    with pytest.raises(Exception):
+        assert_valid_sql(sql)
 
 
-def assert_invalid_sql(sql):
-    sql_query = sqlvalidator.parse(sql)
-    assert sql_query.is_valid() is False
+def test_assert_invalid_sql():
+    sql = "SELECT * FROM table"
+    with pytest.raises(Exception):
+        assert_invalid_sql(sql)
 
 
 def test_select_star_from():
