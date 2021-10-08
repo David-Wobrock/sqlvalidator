@@ -4,13 +4,13 @@ from sqlvalidator.testing import assert_valid_sql, assert_invalid_sql
 
 def test_assert_valid_sql():
     sql = "SELECT field2 FROM (SELECT field1 FROM table)"
-    with pytest.raises(Exception):
+    with pytest.raises(AssertionError):
         assert_valid_sql(sql)
 
 
 def test_assert_invalid_sql():
     sql = "SELECT * FROM table"
-    with pytest.raises(Exception):
+    with pytest.raises(AssertionError):
         assert_invalid_sql(sql)
 
 
