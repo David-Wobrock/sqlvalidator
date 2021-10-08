@@ -3,7 +3,7 @@ from sqlvalidator.testing import assert_valid_sql, assert_invalid_sql
 
 
 def test_assert_valid_sql():
-    sql = "SELECT field2 FROM (SELECT field1 FROM table)"
+    sql = "SELECT FROM"
     with pytest.raises(AssertionError):
         assert_valid_sql(sql)
 
