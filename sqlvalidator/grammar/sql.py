@@ -116,7 +116,7 @@ class SelectStatement:
     def validate(self, known_fields: Optional[Set[str]] = None) -> list:
         errors = []
         known_fields = known_fields or set()
-        if self.from_statement:
+        if hasattr(self.from_statement, "known_fields"):
             known_fields = known_fields | self.from_statement.known_fields
 
         for e in self.expressions:
@@ -975,7 +975,9 @@ class Parenthesis(Expression):
 
     @property
     def known_fields(self) -> Set[str]:
-        return self.args[0].known_fields
+        if hasattr(self.args[0], "known_fields"):
+            return self.args[0].known_fields
+        return set()
 
     @property
     def return_type(self):
