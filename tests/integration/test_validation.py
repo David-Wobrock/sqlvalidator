@@ -1,14 +1,22 @@
+from typing import List, Optional
+
 import sqlvalidator
 
 
-def assert_valid_sql(sql):
+def assert_valid_sql(sql: str):
     sql_query = sqlvalidator.parse(sql)
     assert sql_query.is_valid() is True, sql_query.errors
 
 
-def assert_invalid_sql(sql):
+def assert_invalid_sql(sql: str, expected_errors: Optional[List[str]] = None):
     sql_query = sqlvalidator.parse(sql)
-    assert sql_query.is_valid() is False
+    assert sql_query.is_valid() is False, (
+        "No errors found, but expected: {}".format(expected_errors)
+        if expected_errors
+        else "No errors found, but expected some"
+    )
+    if expected_errors:
+        assert sql_query.errors == expected_errors
 
 
 def test_select_star_from():
@@ -324,3 +332,36 @@ def test_missing_nested_subquery_columns_star():
     select * from (select field from table))
     """
     assert_invalid_sql(sql)
+
+
+def test_missing_chained_columns():
+    sql = """
+    select a.x, b.y
+    from (
+    select o from table) a
+    JOIN (other_table) b
+    USING (o)
+    """
+    assert_invalid_sql(sql, ["The column x was not found in alias a"])
+
+
+def test_missing_table_alias_chained_columns():
+    sql = """
+    select a.x, b.y
+    from (
+    select x from table) a
+    JOIN (select x, y from other_table) c
+    USING (x)
+    """
+    assert_invalid_sql(sql, ["The column y was not found in alias b"])
+
+
+def test_chained_columns_from_join():
+    sql = """
+    select a.x, b.y
+    from (
+    select x from table) a
+    JOIN (other_table) b
+    USING (x)
+    """
+    assert_valid_sql(sql)

@@ -116,13 +116,8 @@ class SelectStatement:
     def validate(self, known_fields: Optional[Set[str]] = None) -> list:
         errors = []
         known_fields = known_fields or set()
-
-        if isinstance(self.from_statement, Parenthesis) and isinstance(
-            self.from_statement.args[0], SelectStatement
-        ):
-            known_fields = known_fields | self.from_statement.args[0].known_fields
-        elif isinstance(self.from_statement, Table):
-            known_fields = known_fields | {"*"}
+        if self.from_statement:
+            known_fields = known_fields | self.from_statement.known_fields
 
         for e in self.expressions:
             errors += e.validate(known_fields)
@@ -636,6 +631,12 @@ class FilteredFunctionCall(Expression):
             and self.filter_condition == other.filter_condition
         )
 
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        errors += self.function_call.validate(known_fields)
+        errors += self.filter_condition.validate(known_fields)
+        return errors
+
 
 class AnalyticsClause(Expression):
     def __init__(self, function, partition_by, order_by, frame_clause):
@@ -696,6 +697,16 @@ class AnalyticsClause(Expression):
             self.order_by,
             self.frame_clause,
         )
+
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        errors += self.function.validate(known_fields)
+        if self.partition_by:
+            for partition in self.partition_by:
+                errors += partition.validate(known_fields)
+        if self.order_by:
+            errors += self.order_by.validate(known_fields)
+        return errors
 
 
 class WindowFrameClause(Expression):
@@ -777,6 +788,20 @@ class ChainedColumns(Expression):
     @property
     def return_type(self):
         return self.columns[0].return_type
+
+    def validate(self, known_fields):
+        errors = super().validate(known_fields)
+        full_value = str(self)
+        alias, last_value = (
+            ".".join(map(transform, self.columns[:-1])),
+            self.columns[-1],
+        )
+        if (
+            full_value not in known_fields
+            and "{}.*".format(transform(alias)) not in known_fields
+        ):
+            errors.append(f"The column {last_value} was not found in alias {alias}")
+        return errors
 
 
 class Type(Expression):
@@ -949,6 +974,10 @@ class Parenthesis(Expression):
         return errors
 
     @property
+    def known_fields(self) -> Set[str]:
+        return self.args[0].known_fields
+
+    @property
     def return_type(self):
         for a in self.args:
             return a.return_type
@@ -1087,6 +1116,10 @@ class Table(Expression):
         if self.in_square_brackets:
             table_str = f"[{table_str}]"
         return table_str
+
+    @property
+    def known_fields(self) -> Set[str]:
+        return {"*"}
 
 
 class Unnest(Expression):
@@ -1238,6 +1271,25 @@ class Join(Expression):
         if self.join_type not in ("CROSS JOIN", ",") and not (self.using or self.on):
             errors.append("Missing ON or USING for join")
         return errors
+
+    @property
+    def known_fields(self) -> Set[str]:
+        known_fields = set()
+        if isinstance(self.left_from, Alias):
+            left_alias = self.left_from.alias
+            for field in self.left_from.expression.known_fields:
+                known_fields.add(left_alias + "." + field)
+        else:
+            known_fields |= self.left_from.known_fields
+
+        if isinstance(self.right_from, Alias):
+            right_alias = self.right_from.alias
+            for field in self.right_from.expression.known_fields:
+                known_fields.add(right_alias + "." + field)
+        else:
+            known_fields |= self.right_from.known_fields
+
+        return known_fields
 
 
 class CombinedQueries(Expression):
