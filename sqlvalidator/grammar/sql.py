@@ -1035,6 +1035,10 @@ class Alias(Expression):
     def return_type(self):
         return self.expression.return_type
 
+    @property
+    def known_fields(self) -> Set[str]:
+        return self.expression.known_fields
+
 
 class Index(Expression):
     def __init__(self, expression, indices):

@@ -409,3 +409,24 @@ FROM Table A
     """
 
     assert_valid_sql(sql)
+
+
+def test_know_fields_from_alias():
+    sql = """
+SELECT
+ ANY_VALUE(sq_1__x) f_0,
+ sq_1__field1 f_1
+FROM (
+ SELECT
+  sq_1.field1 sq_1__field1,
+  sq_1.x sq_1__x,
+  sq_1.x_hash sq_1__x_hash
+ FROM (
+  SELECT *
+  FROM `{table}`
+  WHERE code <> 0
+ ) sq_1
+)
+GROUP BY sq_1__x_hash
+"""
+    assert_valid_sql(sql)
