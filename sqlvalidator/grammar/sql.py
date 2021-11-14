@@ -792,14 +792,11 @@ class ChainedColumns(Expression):
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         full_value = str(self)
-        alias, last_value = (
-            ".".join(map(transform, self.columns[:-1])),
-            self.columns[-1],
-        )
+        alias = ".".join(map(transform, self.columns[:-1]))
+        last_value = self.columns[-1]
         if (
-            full_value not in known_fields
-            and "{}.*".format(transform(alias)) not in known_fields
-        ):
+            full_value not in known_fields and f"{alias}.*" not in known_fields
+        ) and "*" not in known_fields:
             errors.append(f"The column {last_value} was not found in alias {alias}")
         return errors
 

@@ -377,3 +377,35 @@ SELECT
 FROM t
 """
     assert_valid_sql(sql)
+
+
+def test_chained_column_is_nested_field():
+    sql = """
+SELECT
+ StructField.Id,
+ StructField.Name
+FROM Table
+"""
+    assert_valid_sql(sql)
+
+
+def test_chained_column_is_table_alias():
+    sql = """
+SELECT
+ StructField.Id,
+ StructField.Name
+FROM Table StructField
+    """
+
+    assert_valid_sql(sql)
+
+
+def test_chained_column_is_not_table_alias():
+    sql = """
+SELECT
+ StructField.Id,
+ StructField.Name
+FROM Table A
+    """
+
+    assert_valid_sql(sql)
