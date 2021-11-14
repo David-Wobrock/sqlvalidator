@@ -365,3 +365,15 @@ def test_chained_columns_from_join():
     USING (x)
     """
     assert_valid_sql(sql)
+
+
+def test_partition_by_with_order_by():
+    sql = """
+SELECT
+ DENSE_RANK() OVER (
+  PARTITION BY f
+  ORDER BY col ASC
+ ) AS dr
+FROM t
+"""
+    assert_valid_sql(sql)

@@ -705,7 +705,7 @@ class AnalyticsClause(Expression):
             for partition in self.partition_by:
                 errors += partition.validate(known_fields)
         if self.order_by:
-            errors += self.order_by.validate(known_fields)
+            errors += self.order_by.validate(known_fields, None)
         return errors
 
 
