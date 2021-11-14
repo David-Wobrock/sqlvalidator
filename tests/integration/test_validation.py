@@ -430,3 +430,19 @@ FROM (
 GROUP BY sq_1__x_hash
 """
     assert_valid_sql(sql)
+
+
+def test_specified_field_from_alias_subquery():
+    sql = """
+SELECT
+ sq_1__field f_1
+FROM (
+ SELECT
+  sq_1.field sq_1__field
+ FROM (
+  SELECT x field
+  FROM `test_1.top_orphan_segments_2_3`
+ ) sq_1
+)
+"""
+    assert_valid_sql(sql)

@@ -1037,7 +1037,10 @@ class Alias(Expression):
 
     @property
     def known_fields(self) -> Set[str]:
-        return self.expression.known_fields
+        return {
+            "{}.{}".format(transform(self.alias), f)
+            for f in self.expression.known_fields
+        }
 
 
 class Index(Expression):
