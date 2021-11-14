@@ -305,10 +305,7 @@ def compute_file_content(
                 count_changed_sql += 1
             else:
                 tokens.append((token_type, token_value, starting, ending, line))
-            if (
-                not sql_query.is_valid()
-                and NO_SQLVALIDATION_COMMENT not in next_token_value
-            ):
+            if needs_validate and not sql_query.is_valid():
                 count_has_errors += 1
                 errors_locations.append((starting[0], sql_query.errors))
 

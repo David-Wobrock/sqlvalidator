@@ -1,4 +1,5 @@
 from io import StringIO
+from unittest import mock
 
 from sqlvalidator import file_handler
 
@@ -119,3 +120,13 @@ def test_string_starting_with_selected():
     )
     assert num_changed_sql == 0
     assert new_content == file_content
+
+
+def test_format_check_does_not_validate():
+    file_content = "'select id from table_stmt'"
+    input_file = StringIO(file_content)
+    with mock.patch("sqlvalidator.sql_validator.SQLQuery.is_valid") as is_valid:
+        file_handler.compute_file_content(
+            input_file, should_format=True, should_validate=False
+        )
+        assert not is_valid.called, "SQLQuery.is_valid was not "
