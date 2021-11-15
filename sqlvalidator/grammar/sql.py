@@ -328,7 +328,10 @@ class GroupByClause(Expression):
             elif (
                 isinstance(arg, (Column, String))
                 and (
-                    not any(arg.value == f.name for f in known_fields)
+                    not any(
+                        f.name == arg.value or f.name.split(".", 1)[-1] == arg.value
+                        for f in known_fields
+                    )
                     and arg.value
                     not in [e.alias for e in select_expressions if isinstance(e, Alias)]
                 )
@@ -780,7 +783,10 @@ class Column(Expression):
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         if (
-            not any(f.name == self.value for f in known_fields)
+            not any(
+                f.name == self.value or f.name.split(".", 1)[-1] == self.value
+                for f in known_fields
+            )
             and self.value != "*"
             and not any(f.name == "*" for f in known_fields)
         ):
@@ -815,7 +821,10 @@ class ChainedColumns(Expression):
         alias = ".".join(map(transform, self.columns[:-1]))
         last_value = self.columns[-1]
         if (
-            not any(f.name == full_value for f in known_fields)
+            not any(
+                f.name == full_value or f.name.split(".", 1)[-1] == full_value
+                for f in known_fields
+            )
             and not any(f.name == f"{alias}.*" for f in known_fields)
         ) and not any(f.name == "*" for f in known_fields):
             errors.append(f"The column {last_value} was not found in alias {alias}")

@@ -496,3 +496,28 @@ def test_unknown_type_subquery_field_and_allow_where():
      )
 """
     assert_valid_sql(sql)
+
+
+def test_outer_query_uses_field_without_alias():
+    sql = """
+select n
+from (
+ select name n
+ from trees_tree
+) a;
+"""
+    assert_valid_sql(sql)
+
+
+def test_outer_query_uses_field_without_alias_exists_once():
+    sql = """
+select n
+from (
+ select name n
+ from trees_tree
+) a, (
+ select name
+ from trees_tree
+) b;
+"""
+    assert_valid_sql(sql)
