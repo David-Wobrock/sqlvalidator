@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, List, Optional, Set
 
 from sqlvalidator.grammar.tokeniser import lower
@@ -9,6 +10,15 @@ def transform(obj: Any) -> str:
     if hasattr(obj, "transform"):
         return obj.transform()
     return str(obj)
+
+
+@dataclass
+class _FieldInfo:
+    name: str
+    type: type
+
+    def __hash__(self):
+        return hash(self.name)
 
 
 class SelectStatement:
@@ -113,7 +123,7 @@ class SelectStatement:
             statement_str += ";"
         return statement_str
 
-    def validate(self, known_fields: Optional[Set[str]] = None) -> list:
+    def validate(self, known_fields: Optional[Set[_FieldInfo]] = None) -> list:
         errors = []
         known_fields = known_fields or set()
         if hasattr(self.from_statement, "known_fields"):
@@ -138,24 +148,26 @@ class SelectStatement:
         return errors
 
     @property
-    def known_fields(self) -> Set[str]:
+    def known_fields(self) -> Set[_FieldInfo]:
         fields = set()
         for e in self.expressions:
             if isinstance(e, Column):
-                fields.add(e.value)
+                fields.add(_FieldInfo(e.value, e.return_type))
             elif isinstance(e, Alias):
                 if isinstance(e.alias, Column):
-                    fields.add(e.alias.value)
+                    fields.add(_FieldInfo(e.alias.value, e.return_type))
                 else:
-                    fields.add(e.alias)
+                    fields.add(_FieldInfo(e.alias, e.return_type))
 
         if self.from_statement:
             if isinstance(self.from_statement, Parenthesis) and isinstance(
                 self.from_statement.args[0], SelectStatement
             ):
                 subquery_known_fields = self.from_statement.args[0].known_fields
-                if "*" in fields and "*" not in subquery_known_fields:
-                    fields.remove("*")
+                if any(f.name == "*" for f in fields) and not any(
+                    f.name == "*" for f in subquery_known_fields
+                ):
+                    fields = {f for f in fields if f.name != "*"}
                     fields |= subquery_known_fields
 
         return fields
@@ -232,7 +244,7 @@ class Expression:
     def __eq__(self, other):
         return type(self) == type(other) and self.value == other.value
 
-    def validate(self, known_fields: Set[str]) -> list:
+    def validate(self, known_fields: Set[_FieldInfo]) -> list:
         return []
 
     @property
@@ -249,7 +261,7 @@ class WhereClause(Expression):
             return "\n " + transformed_value.replace("\n", "\n ")
         return " " + transformed_value
 
-    def validate(self, known_fields: Set[str]) -> list:
+    def validate(self, known_fields: Set[_FieldInfo]) -> list:
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
         if self.value.return_type not in (bool, Any):
@@ -309,11 +321,11 @@ class GroupByClause(Expression):
             elif (
                 isinstance(arg, (Column, String))
                 and (
-                    arg.value not in known_fields
+                    not any(arg.value == f.name for f in known_fields)
                     and arg.value
                     not in [e.alias for e in select_expressions if isinstance(e, Alias)]
                 )
-                and "*" not in known_fields
+                and not any(f.name == "*" for f in known_fields)
             ):
                 errors.append('column "{}" does not exist'.format(arg.value))
 
@@ -760,9 +772,9 @@ class Column(Expression):
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         if (
-            self.value not in known_fields
+            not any(f.name == self.value for f in known_fields)
             and self.value != "*"
-            and "*" not in known_fields
+            and not any(f.name == "*" for f in known_fields)
         ):
             errors.append("The column {} was not found".format(self.value))
         return errors
@@ -789,14 +801,21 @@ class ChainedColumns(Expression):
     def return_type(self):
         return self.columns[-1].return_type
 
+    def resolve_return_type(self, known_fields):
+        x = [f for f in known_fields if f.name == transform(self)]
+        if x:
+            return x[0].type
+        return self.columns[-1].return_type
+
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         full_value = str(self)
         alias = ".".join(map(transform, self.columns[:-1]))
         last_value = self.columns[-1]
         if (
-            full_value not in known_fields and f"{alias}.*" not in known_fields
-        ) and "*" not in known_fields:
+            not any(f.name == full_value for f in known_fields)
+            and not any(f.name == f"{alias}.*" for f in known_fields)
+        ) and not any(f.name == "*" for f in known_fields):
             errors.append(f"The column {last_value} was not found in alias {alias}")
         return errors
 
@@ -971,7 +990,7 @@ class Parenthesis(Expression):
         return errors
 
     @property
-    def known_fields(self) -> Set[str]:
+    def known_fields(self) -> Set[_FieldInfo]:
         if hasattr(self.args[0], "known_fields"):
             return self.args[0].known_fields
         return set()
@@ -1036,9 +1055,9 @@ class Alias(Expression):
         return self.expression.return_type
 
     @property
-    def known_fields(self) -> Set[str]:
+    def known_fields(self) -> Set[_FieldInfo]:
         return {
-            "{}.{}".format(transform(self.alias), f)
+            _FieldInfo("{}.{}".format(transform(self.alias), f.name), f.type)
             for f in self.expression.known_fields
         }
 
@@ -1124,8 +1143,8 @@ class Table(Expression):
         return table_str
 
     @property
-    def known_fields(self) -> Set[str]:
-        return {"*"}
+    def known_fields(self) -> Set[_FieldInfo]:
+        return {_FieldInfo("*", type=Any)}
 
 
 class Unnest(Expression):
@@ -1279,19 +1298,24 @@ class Join(Expression):
         return errors
 
     @property
-    def known_fields(self) -> Set[str]:
+    def known_fields(self) -> Set[_FieldInfo]:
         known_fields = set()
         if isinstance(self.left_from, Alias):
             left_alias = self.left_from.alias
             for field in self.left_from.expression.known_fields:
-                known_fields.add(left_alias + "." + field)
+                known_fields.add(_FieldInfo(left_alias + "." + field.name, field.type))
         else:
             known_fields |= self.left_from.known_fields
 
         if isinstance(self.right_from, Alias):
             right_alias = self.right_from.alias
             for field in self.right_from.expression.known_fields:
-                known_fields.add(right_alias + "." + field)
+                known_fields.add(
+                    _FieldInfo(
+                        right_alias + "." + field.name,
+                        field.type,
+                    )
+                )
         else:
             known_fields |= self.right_from.known_fields
 
