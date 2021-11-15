@@ -464,6 +464,25 @@ def test_subquery_field_is_boolean_and_can_where():
     assert_valid_sql(sql)
 
 
+def test_subquery_field_is_not_boolean_and_cannot_where():
+    sql = """
+      SELECT *
+      FROM first_table a
+      LEFT JOIN (
+       SELECT
+        3 field_alias,
+       FROM other_table
+      ) b
+      ON a.id = b.id
+      WHERE b.field_alias
+     )
+"""
+
+    assert_invalid_sql(
+        sql, ["The argument of WHERE must be type boolean, not type int"]
+    )
+
+
 def test_unknown_type_subquery_field_and_allow_where():
     sql = """
       SELECT *

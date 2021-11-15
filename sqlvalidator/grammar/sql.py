@@ -251,6 +251,12 @@ class Expression:
     def return_type(self):
         return Any
 
+    def resolve_return_type(self, known_fields):
+        matching_fields = [f for f in known_fields if f.name == transform(self)]
+        if matching_fields:
+            return matching_fields[0].type
+        return self.return_type
+
 
 class WhereClause(Expression):
     def transform(self):
@@ -264,10 +270,11 @@ class WhereClause(Expression):
     def validate(self, known_fields: Set[_FieldInfo]) -> list:
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
-        if self.value.return_type not in (bool, Any):
+        value_type = self.value.resolve_return_type(known_fields)
+        if value_type not in (bool, Any):
             errors.append(
                 "The argument of WHERE must be type boolean, not type {}".format(
-                    self.value.return_type
+                    value_type.__name__
                 )
             )
         return errors
@@ -344,10 +351,11 @@ class HavingClause(Expression):
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
-        if self.value.return_type not in (bool, Any):
+        value_type = self.value.resolve_return_type(known_fields)
+        if value_type not in (bool, Any):
             errors.append(
                 "The argument of HAVING must be type boolean, not type {}".format(
-                    self.value.return_type
+                    value_type.__name__
                 )
             )
         return errors
@@ -799,12 +807,6 @@ class ChainedColumns(Expression):
 
     @property
     def return_type(self):
-        return self.columns[-1].return_type
-
-    def resolve_return_type(self, known_fields):
-        x = [f for f in known_fields if f.name == transform(self)]
-        if x:
-            return x[0].type
         return self.columns[-1].return_type
 
     def validate(self, known_fields):
@@ -1479,10 +1481,11 @@ class BooleanCondition(Expression):
         errors = super().validate(known_fields)
         for a in self.args:
             errors += a.validate(known_fields)
-            if a.return_type not in (bool, Any):
+            a_type = a.resolve_return_type(known_fields)
+            if a_type not in (bool, Any):
                 errors.append(
                     "The argument of {} must be type boolean, not type {}".format(
-                        self.type.upper(), a.return_type
+                        self.type.upper(), a_type.__name__
                     )
                 )
 
