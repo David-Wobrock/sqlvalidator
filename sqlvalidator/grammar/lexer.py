@@ -196,7 +196,7 @@ class FromStatementParser:
             while next_token == ".":
                 right_hand, next_token = ExpressionParser.parse(
                     tokens,
-                    is_right_hand=True,
+                    is_chained_columns=True,
                 )
                 table_name = ChainedColumns(table_name, right_hand)
             expression = Table(table_name)
@@ -545,6 +545,7 @@ class ExpressionParser:
         can_alias=True,
         until_one_of=None,
         first_token=None,
+        is_chained_columns=False,
     ) -> Tuple[Expression, Any]:
         until_one_of = until_one_of or []
 
@@ -793,17 +794,9 @@ class ExpressionParser:
             )
             next_token = next(tokens, None)
 
-        if next_token and next_token in ("+", "-", "*", "/"):
-            left_hand = expression
-            symbol = next_token
-            right_hand, next_token = ExpressionParser.parse(
-                tokens, is_right_hand=True, until_one_of=until_one_of
-            )
-            expression = ArithmaticOperator(symbol, left_hand, right_hand)
-
         if next_token == ".":
             right_hand, next_token = ExpressionParser.parse(
-                tokens, is_right_hand=True, until_one_of=until_one_of
+                tokens, until_one_of=until_one_of, is_chained_columns=True
             )
             expression = ChainedColumns(expression, right_hand)
             if next_token is not None and next_token == "[":
@@ -814,7 +807,17 @@ class ExpressionParser:
                 expression = Index(expression, arguments)
                 next_token = next(tokens, None)
 
-        if is_right_hand:
+        if next_token and next_token in ("+", "-", "*", "/") and not is_chained_columns:
+            left_hand = expression
+            symbol = next_token
+            right_hand, next_token = ExpressionParser.parse(
+                tokens,
+                is_right_hand=True,
+                until_one_of=until_one_of,
+            )
+            expression = ArithmaticOperator(symbol, left_hand, right_hand)
+
+        if is_right_hand or is_chained_columns:
             return expression, next_token
 
         if lower(next_token) in Condition.PREDICATES:

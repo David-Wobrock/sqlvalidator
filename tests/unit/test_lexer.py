@@ -8,6 +8,7 @@ from sqlvalidator.grammar.sql import (
     Addition,
     Alias,
     AnalyticsClause,
+    ArithmaticOperator,
     Array,
     BooleanCondition,
     CastFunctionCall,
@@ -928,5 +929,34 @@ def test_boolean_condition():
         ),
         with_as=False,
         alias="fnew",
+    )
+    assert actual == expected
+
+
+def test_chained_columns_with_arithmetic_operator():
+    actual, _ = ExpressionParser.parse(
+        to_tokens("IF((a.field + b.field) = 200, 'true', 'false') fa")
+    )
+    expected = Alias(
+        FunctionCall(
+            "IF",
+            *[
+                Condition(
+                    Parenthesis(
+                        ArithmaticOperator(
+                            "+",
+                            ChainedColumns(Column("a"), Column("field")),
+                            ChainedColumns(Column("b"), Column("field")),
+                        )
+                    ),
+                    "=",
+                    Integer(200),
+                ),
+                String("true", quotes="'"),
+                String("false", quotes="'"),
+            ]
+        ),
+        with_as=False,
+        alias="fa",
     )
     assert actual == expected
