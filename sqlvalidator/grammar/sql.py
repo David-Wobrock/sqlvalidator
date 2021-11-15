@@ -1437,7 +1437,10 @@ class Condition(Expression):
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
-        errors += self.right_hand.validate(known_fields)
+        if self.predicate.lower() == "between":
+            errors += self.right_hand.validate(known_fields, is_between_predicate=True)
+        else:
+            errors += self.right_hand.validate(known_fields)
         return errors
 
     @property
@@ -1489,17 +1492,18 @@ class BooleanCondition(Expression):
             and all(a == o for a, o in zip(self.args, other.args))
         )
 
-    def validate(self, known_fields):
+    def validate(self, known_fields, is_between_predicate=False):
         errors = super().validate(known_fields)
         for a in self.args:
             errors += a.validate(known_fields)
-            a_type = a.resolve_return_type(known_fields)
-            if a_type not in (bool, Any):
-                errors.append(
-                    "The argument of {} must be type boolean, not type {}".format(
-                        self.type.upper(), a_type.__name__
+            if not is_between_predicate:
+                a_type = a.resolve_return_type(known_fields)
+                if a_type not in (bool, Any):
+                    errors.append(
+                        "The argument of {} must be type boolean, not type {}".format(
+                            self.type.upper(), a_type.__name__
+                        )
                     )
-                )
 
         return errors
 

@@ -523,7 +523,7 @@ from (
     assert_valid_sql(sql)
 
 
-def test_ambigious_not_aliased_field():
+def test_ambiguous_not_aliased_field():
     sql = """
 select n
 from (
@@ -535,3 +535,13 @@ from (
 ) b;
 """
     assert_invalid_sql(sql, ['column "n" is ambiguous'])
+
+
+def test_between_condition_is_valid():
+    sql = """
+    SELECT *
+     FROM t
+    WHERE
+      f BETWEEN 200 AND 299
+    """
+    assert_valid_sql(sql)
