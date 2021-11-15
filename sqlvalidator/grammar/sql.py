@@ -249,7 +249,7 @@ class Expression:
 
     @property
     def return_type(self):
-        return Any
+        return object
 
     def resolve_return_type(self, known_fields):
         matching_fields = [f for f in known_fields if f.name == transform(self)]
@@ -271,7 +271,7 @@ class WhereClause(Expression):
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
         value_type = self.value.resolve_return_type(known_fields)
-        if value_type not in (bool, Any):
+        if value_type not in (bool, object):
             errors.append(
                 "The argument of WHERE must be type boolean, not type {}".format(
                     value_type.__name__
@@ -358,7 +358,7 @@ class HavingClause(Expression):
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
         value_type = self.value.resolve_return_type(known_fields)
-        if value_type not in (bool, Any):
+        if value_type not in (bool, object):
             errors.append(
                 "The argument of HAVING must be type boolean, not type {}".format(
                     value_type.__name__
@@ -1158,7 +1158,7 @@ class Table(Expression):
 
     @property
     def known_fields(self) -> Set[_FieldInfo]:
-        return {_FieldInfo("*", type=Any)}
+        return {_FieldInfo("*", type=object)}
 
 
 class Unnest(Expression):
@@ -1305,7 +1305,7 @@ class Join(Expression):
             self.using,
         )
 
-    def validate(self, known_fields: Set[str]) -> list:
+    def validate(self, known_fields: Set[_FieldInfo]) -> list:
         errors = super().validate(known_fields)
         if self.join_type not in ("CROSS JOIN", ",") and not (self.using or self.on):
             errors.append("Missing ON or USING for join")
@@ -1498,7 +1498,7 @@ class BooleanCondition(Expression):
             errors += a.validate(known_fields)
             if not is_between_predicate:
                 a_type = a.resolve_return_type(known_fields)
-                if a_type not in (bool, Any):
+                if a_type not in (bool, object):
                     errors.append(
                         "The argument of {} must be type boolean, not type {}".format(
                             self.type.upper(), a_type.__name__
