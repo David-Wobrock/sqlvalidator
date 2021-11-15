@@ -521,3 +521,17 @@ from (
 ) b;
 """
     assert_valid_sql(sql)
+
+
+def test_ambigious_not_aliased_field():
+    sql = """
+select n
+from (
+ select name n
+ from trees_tree
+) a, (
+ select name n
+ from trees_tree
+) b;
+"""
+    assert_invalid_sql(sql, ['column "n" is ambiguous'])
