@@ -252,7 +252,7 @@ class WhereClause(Expression):
     def validate(self, known_fields: Set[str]) -> list:
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
-        if self.value.return_type != bool:
+        if self.value.return_type not in (bool, Any):
             errors.append(
                 "The argument of WHERE must be type boolean, not type {}".format(
                     self.value.return_type
@@ -332,9 +332,9 @@ class HavingClause(Expression):
     def validate(self, known_fields):
         errors = super().validate(known_fields)
         errors += self.value.validate(known_fields)
-        if self.value.return_type != bool:
+        if self.value.return_type not in (bool, Any):
             errors.append(
-                "The argument of WHERE must be type boolean, not type {}".format(
+                "The argument of HAVING must be type boolean, not type {}".format(
                     self.value.return_type
                 )
             )
@@ -787,7 +787,7 @@ class ChainedColumns(Expression):
 
     @property
     def return_type(self):
-        return self.columns[0].return_type
+        return self.columns[-1].return_type
 
     def validate(self, known_fields):
         errors = super().validate(known_fields)
@@ -1455,7 +1455,7 @@ class BooleanCondition(Expression):
         errors = super().validate(known_fields)
         for a in self.args:
             errors += a.validate(known_fields)
-            if a.return_type != bool and a.return_type != Any:
+            if a.return_type not in (bool, Any):
                 errors.append(
                     "The argument of {} must be type boolean, not type {}".format(
                         self.type.upper(), a.return_type
