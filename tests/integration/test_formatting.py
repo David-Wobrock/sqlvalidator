@@ -2143,3 +2143,12 @@ SELECT ARRAY_CONCAT_AGG(col)[0][0]
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_string_containing_quote():
+    sql = 'select col = "Test\'" from t'
+    expected = """
+SELECT col = "Test\'"
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()

@@ -102,6 +102,26 @@ def test_escaped_string_with_keyword():
     assert list(to_tokens(value)) == ["name", "=", "'", "O\\'Connor", "'"]
 
 
+def test_some_string_containing_quote():
+    value = '"foo\'"'
+    assert list(to_tokens(value)) == ['"', "foo'", '"']
+
+
+def test_another_string_containing_quote():
+    value = "'foo\"'"
+    assert list(to_tokens(value)) == ["'", 'foo"', "'"]
+
+
+def test_string_containing_many_quotes():
+    value = "\"'f'o'o'\""
+    assert list(to_tokens(value)) == ['"', "'f'o'o'", '"']
+
+
+def test_string_containing_many_quotes_and_space():
+    value = " \"'f'o'o'\""
+    assert list(to_tokens(value)) == ['"', "'f'o'o'", '"']
+
+
 def test_keep_tokens_in():
     tokens = iter(["foo", "bar", "baz"])
     assert get_tokens_until_not_in(tokens, ["foo", "bar"]) == (["foo", "bar"], "baz")

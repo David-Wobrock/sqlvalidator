@@ -158,7 +158,10 @@ def _split_on_kept_token(token: str, value: str):
 
 
 def split_tokens(value: str):
-    for string_token in STRING_SPLIT_TOKENS:
+    for string_token in sorted(
+        STRING_SPLIT_TOKENS,
+        key=lambda token: value.index(token) if token in value else (len(value) + 1),
+    ):
         if string_token in value:
             yield from _split_on_string_token(string_token, value)
             return
