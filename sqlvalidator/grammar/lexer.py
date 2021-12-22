@@ -510,6 +510,7 @@ class ExpressionListParser:
         expression_tokens = []
         count_parenthesis = 0
         count_square_brackets = 0
+        in_string = False
         while next_token is not None:
             expression_tokens.append(next_token)
             if next_token == "(":
@@ -520,12 +521,15 @@ class ExpressionListParser:
                 count_square_brackets += 1
             elif next_token == "]":
                 count_square_brackets -= 1
+            elif next_token in String.QUOTES:
+                in_string = not in_string
 
             next_token = next(tokens, None)
             if next_token is None or (
                 next_token == ","
                 and count_parenthesis == 0
                 and count_square_brackets == 0
+                and in_string is False
             ):
                 expression, _ = ExpressionParser.parse(
                     iter(expression_tokens), can_be_type=can_be_type

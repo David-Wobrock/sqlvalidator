@@ -960,3 +960,9 @@ def test_chained_columns_with_arithmetic_operator():
         alias="fa",
     )
     assert actual == expected
+
+
+def test_function_with_single_comma_string_param():
+    actual, _ = ExpressionParser.parse(to_tokens("test(',')"))
+    expected = FunctionCall("test", String(",", quotes="'"))
+    assert actual == expected
