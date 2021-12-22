@@ -798,18 +798,11 @@ class ExpressionParser:
             )
             next_token = next(tokens, None)
 
-        if next_token == ".":
+        while next_token == ".":
             right_hand, next_token = ExpressionParser.parse(
                 tokens, until_one_of=until_one_of, is_chained_columns=True
             )
             expression = ChainedColumns(expression, right_hand)
-            if next_token is not None and next_token == "[":
-                argument_tokens, next_token = get_tokens_until_one_of(
-                    tokens, stop_words=["]"]
-                )
-                arguments = ExpressionListParser.parse(iter(argument_tokens))
-                expression = Index(expression, arguments)
-                next_token = next(tokens, None)
 
         if next_token and next_token in ("+", "-", "*", "/") and not is_chained_columns:
             left_hand = expression
@@ -821,7 +814,7 @@ class ExpressionParser:
             )
             expression = ArithmaticOperator(symbol, left_hand, right_hand)
 
-        if next_token == "[":
+        while next_token == "[":
             argument_tokens, next_token = get_tokens_until_one_of(
                 tokens, stop_words=["]"]
             )

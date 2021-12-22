@@ -2134,3 +2134,12 @@ SELECT SPLIT(col, ':')[SAFE_OFFSET(0)]
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_multiple_index_accesses():
+    sql = "select array_concat_agg(col)[0][0] from t"
+    expected = """
+SELECT ARRAY_CONCAT_AGG(col)[0][0]
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
