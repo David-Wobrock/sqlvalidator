@@ -821,6 +821,14 @@ class ExpressionParser:
             )
             expression = ArithmaticOperator(symbol, left_hand, right_hand)
 
+        if next_token == "[":
+            argument_tokens, next_token = get_tokens_until_one_of(
+                tokens, stop_words=["]"]
+            )
+            arguments = ExpressionListParser.parse(iter(argument_tokens))
+            expression = Index(expression, arguments)
+            next_token = next(tokens, None)
+
         if is_right_hand or is_chained_columns:
             return expression, next_token
 

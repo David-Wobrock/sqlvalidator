@@ -2125,3 +2125,12 @@ FROM (
 )
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_function_with_index_access():
+    sql = "select split(col, ':')[safe_offset(0)] from t"
+    expected = """
+SELECT SPLIT(col, ':')[SAFE_OFFSET(0)]
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
