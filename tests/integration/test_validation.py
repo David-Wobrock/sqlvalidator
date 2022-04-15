@@ -545,3 +545,19 @@ def test_between_condition_is_valid():
       f BETWEEN 200 AND 299
     """
     assert_valid_sql(sql)
+
+
+def test_select_star_replace():
+    sql = """
+SELECT * REPLACE ("x" AS col)
+FROM t
+"""
+    assert_valid_sql(sql)
+
+
+def test_select_star_unknown_column():
+    sql = """
+SELECT * REPLACE ("x" AS col)
+FROM (select field from t)
+"""
+    assert_invalid_sql(sql)
