@@ -1529,7 +1529,9 @@ class Negation(Expression):
         return bool
 
 
-class ExceptClause(Expression):
+class SelectAllClause(Expression):
+    KEYWORD = ""
+
     def __init__(self, expression, args):
         super().__init__(expression)
         self.args = args
@@ -1540,7 +1542,7 @@ class ExceptClause(Expression):
         )
 
     def __str__(self):
-        except_str = "{} EXCEPT (".format(transform(self.value))
+        except_str = "{} {} (".format(transform(self.value), self.KEYWORD)
         if len(self.args) > 1:
             except_str += "\n {}\n".format(",\n ".join(map(transform, self.args)))
         elif except_str:
@@ -1548,23 +1550,12 @@ class ExceptClause(Expression):
         return except_str + ")"
 
 
-class ReplaceClause(Expression):
-    def __init__(self, expression, args):
-        super().__init__(expression)
-        self.args = args
+class ExceptClause(SelectAllClause):
+    KEYWORD = "EXCEPT"
 
-    def __repr__(self):
-        return "<{}: {!r} args: {!r}>".format(
-            self.__class__.__name__, self.value, self.args
-        )
 
-    def __str__(self):
-        except_str = "{} REPLACE (".format(transform(self.value))
-        if len(self.args) > 1:
-            except_str += "\n {}\n".format(",\n ".join(map(transform, self.args)))
-        elif except_str:
-            except_str += transform(self.args[0])
-        return except_str + ")"
+class ReplaceClause(SelectAllClause):
+    KEYWORD = "REPLACE"
 
 
 class Case(Expression):
