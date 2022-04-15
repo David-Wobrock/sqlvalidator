@@ -2182,3 +2182,26 @@ SELECT * REPLACE ("x" AS col)
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_nesting_case_expr():
+    sql = """SELECT CASE
+    WHEN CASE
+    WHEN code = 1 THEN 'VALID'
+    WHEN code = 2 THEN 'INVALID' END
+   = 'VALID' THEN 'OK' ELSE 'KO' END
+FROM table
+"""
+    expected = """
+SELECT CASE
+ WHEN
+  CASE
+   WHEN code = 1 THEN 'VALID'
+   WHEN code = 2 THEN 'INVALID'
+  END = 'VALID'
+ THEN 'OK'
+ ELSE 'KO'
+END
+FROM table
+"""
+    assert format_sql(sql) == expected.strip()
