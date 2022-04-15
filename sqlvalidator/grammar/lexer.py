@@ -902,6 +902,10 @@ class ExpressionParser:
                 raise ParsingError("expected '('")
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             arguments = ExpressionListParser.parse(iter(argument_tokens))
+            for arg in arguments:
+                assert (
+                    isinstance(arg, Alias) and arg.with_as is True
+                ), "SELECT * REPLACE arguments must be alias with AS"
             expression = ReplaceClause(expression, arguments)
             next_token = next(tokens, None)
 

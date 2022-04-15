@@ -1557,6 +1557,12 @@ class ExceptClause(SelectAllClause):
 class ReplaceClause(SelectAllClause):
     KEYWORD = "REPLACE"
 
+    def validate(self, known_fields: Set[_FieldInfo]) -> list:
+        errors = super().validate(known_fields)
+        for arg in self.args:
+            errors += arg.alias.validate(known_fields)
+        return errors
+
 
 class Case(Expression):
     def __init__(self, expression, when_then, else_expression):
