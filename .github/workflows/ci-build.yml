@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Installing dependencies
-        run: python3.7 -m pip install black==21.12b0 mypy==0.921 flake8==4.0.1 isort==5.10.1
+        run: python3.7 -m pip install black==22.3.0 mypy==0.942 flake8==4.0.1 isort==5.10.1
 
       - name: Lint using flake8
         run: flake8 .
