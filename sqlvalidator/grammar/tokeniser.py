@@ -47,10 +47,12 @@ def get_tokens_until_one_of(tokens, stop_words, first_token=None, keep=None):
     next_token = next(tokens, None)
     count_parenthesis = 0 if first_token != "(" else 1
     count_square_brackets = 0 if first_token != "[" else 1
+    count_case_expr = 0 if first_token != "case" else 1
     while next_token is not None and not (
         lower(next_token) in stop_words
         and count_parenthesis <= 0
         and count_square_brackets <= 0
+        and count_case_expr <= 0
         and (
             not argument_tokens
             or (lower(argument_tokens[-1]), lower(next_token)) not in keep
@@ -65,6 +67,10 @@ def get_tokens_until_one_of(tokens, stop_words, first_token=None, keep=None):
             count_square_brackets += 1
         elif next_token == "]":
             count_square_brackets -= 1
+        elif lower(next_token) == "case":
+            count_case_expr += 1
+        elif lower(next_token) == "end":
+            count_case_expr -= 1
         next_token = next(tokens, None)
 
     return argument_tokens, next_token
