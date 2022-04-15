@@ -2152,3 +2152,33 @@ SELECT col = "Test\'"
 FROM t
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_select_star_replace():
+    sql = 'select * replace ("x" as col) from t'
+    expected = """
+SELECT * REPLACE ("x" AS col)
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_select_star_multiple_replace():
+    sql = 'select * replace ("x" as col, "y" as f) from t'
+    expected = """
+SELECT * REPLACE (
+ "x" AS col,
+ "y" AS f
+)
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_select_star_replace_nospace():
+    sql = 'select * replace("x" as col) from t'
+    expected = """
+SELECT * REPLACE ("x" AS col)
+FROM t
+"""
+    assert format_sql(sql) == expected.strip()

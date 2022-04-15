@@ -35,6 +35,7 @@ from sqlvalidator.grammar.sql import (
     OrderByClause,
     OrderByItem,
     Parenthesis,
+    ReplaceClause,
     SelectStatement,
     String,
     Table,
@@ -893,6 +894,15 @@ class ExpressionParser:
             argument_tokens = get_tokens_until_closing_parenthesis(tokens)
             arguments = ExpressionListParser.parse(iter(argument_tokens))
             expression = ExceptClause(expression, arguments)
+            next_token = next(tokens, None)
+
+        if lower(next_token) == "replace":
+            opening_parenthesis = next(tokens, None)
+            if opening_parenthesis != "(":
+                raise ParsingError("expected '('")
+            argument_tokens = get_tokens_until_closing_parenthesis(tokens)
+            arguments = ExpressionListParser.parse(iter(argument_tokens))
+            expression = ReplaceClause(expression, arguments)
             next_token = next(tokens, None)
 
         if (

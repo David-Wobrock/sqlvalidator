@@ -1548,6 +1548,25 @@ class ExceptClause(Expression):
         return except_str + ")"
 
 
+class ReplaceClause(Expression):
+    def __init__(self, expression, args):
+        super().__init__(expression)
+        self.args = args
+
+    def __repr__(self):
+        return "<{}: {!r} args: {!r}>".format(
+            self.__class__.__name__, self.value, self.args
+        )
+
+    def __str__(self):
+        except_str = "{} REPLACE (".format(transform(self.value))
+        if len(self.args) > 1:
+            except_str += "\n {}\n".format(",\n ".join(map(transform, self.args)))
+        elif except_str:
+            except_str += transform(self.args[0])
+        return except_str + ")"
+
+
 class Case(Expression):
     def __init__(self, expression, when_then, else_expression):
         super().__init__(expression)
