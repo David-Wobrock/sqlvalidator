@@ -1,0 +1,6 @@
+- id: sqlvalidator
+  name: sqlvalidator
+  description: Validate SQL snippets inside Python code.
+  entry: sqlvalidator --format
+  language: python
+  types: [python]
