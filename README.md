@@ -121,6 +121,16 @@ Validation contains:
 * https://www.postgresql.org/docs/9.6/sql-select.html
 * https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax
 
+## Use with [pre-commit](https://pre-commit.com)
+
+Add this to your `.pre-commit-config.yaml`:
+```yaml
+  - repo: https://github.com/David-Wobrock/sqlvalidator
+    rev: <sha1 of the latest sqlvalidator commit>
+    hooks:
+      - id: sqlvalidator
+```
+
 ## Contributing
 
 If you want to contribute to the sqlvalidator, first, thank you for the interest.
