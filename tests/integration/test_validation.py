@@ -561,3 +561,8 @@ SELECT * REPLACE ("x" AS col)
 FROM (select field from t)
 """
     assert_invalid_sql(sql)
+
+
+def test_tab_as_token_separator():
+    sql = "\tSELECT * FROM\ttable"
+    assert_valid_sql(sql)
