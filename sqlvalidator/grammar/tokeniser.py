@@ -1,7 +1,7 @@
 from typing import Optional
 
 STRING_SPLIT_TOKENS = ("'", '"', "`")
-WHITESPACE_SPLIT_TOKENS = (" ", "\n")
+WHITESPACE_SPLIT_TOKENS = (" ", "\n", "\t")
 KEPT_SPLIT_TOKENS = (
     ",",
     ";",
