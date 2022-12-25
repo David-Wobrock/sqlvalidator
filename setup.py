@@ -35,7 +35,7 @@ setup(
     packages=find_packages(include=["sqlvalidator*"]),
     extras_require={
         "test": [
-            "pytest==6.2.4",
+            "pytest==7.2.0",
         ]
     },
     keywords=(
@@ -52,6 +52,8 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     entry_points={"console_scripts": ["sqlvalidator = sqlvalidator.main:_main"]},
 )
