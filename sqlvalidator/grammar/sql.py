@@ -1052,6 +1052,9 @@ class Alias(Expression):
             self.expression, self.with_as, self.alias
         )
 
+    def __str__(self):
+        return "{}".format(transform(self))
+
     def __eq__(self, other):
         return (
             type(self) == type(other)
