@@ -715,7 +715,7 @@ class AnalyticsClause(Expression):
   Function: {!r}
   Partition By: {!r}
   Order By: {!r}
-  Frame Clause: {!r}
+  Frame Clause: {!r}>
 """.format(
             self.__class__.__name__,
             self.function,
@@ -746,7 +746,7 @@ class WindowFrameClause(Expression):
     def __repr__(self):
         return """<{}:
   Row Range: {!r}
-  Frame: {!r}
+  Frame: {!r}>
 """.format(
             self.__class__.__name__,
             self.rows_range,
@@ -1052,6 +1052,9 @@ class Alias(Expression):
             self.expression, self.with_as, self.alias
         )
 
+    def __str__(self):
+        return "{}".format(transform(self))
+
     def __eq__(self, other):
         return (
             type(self) == type(other)
@@ -1295,7 +1298,7 @@ class Join(Expression):
   Left part: {!r}
   Right part: {!r}
   On: {!r}
-  Using {!r}
+  Using {!r}>
 """.format(
             self.__class__.__name__,
             self.join_type,
@@ -1366,7 +1369,7 @@ class CombinedQueries(Expression):
         return """<{}:
   Set Operator: {!r}
   Left query: {!r}
-  Right query: {!r}
+  Right query: {!r}>
 """.format(
             self.__class__.__name__,
             self.set_operator,
