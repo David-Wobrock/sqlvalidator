@@ -553,7 +553,11 @@ class FunctionCall(Expression):
 
     def validate(self, known_fields):
         errors = super().validate(known_fields)
-        for a in self.args:
+        if self.function_name == 'cast':
+            tovalidate = [xa for xa in self.args if xa != 'AS']
+        else:
+            tovalidate = self.args
+        for a in tovalidate:
             errors += a.validate(known_fields)
         return errors
 
@@ -835,7 +839,7 @@ class ChainedColumns(Expression):
 
 
 class Type(Expression):
-    VALUES = ("int", "float", "day", "month", "timestamp", "int64", "string", "date")
+    VALUES = ("int", "float", "day", "month", "timestamp", "int64", "string", "date", "numeric")
 
     def __str__(self):
         return self.value.upper()
