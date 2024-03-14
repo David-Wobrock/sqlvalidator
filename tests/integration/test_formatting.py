@@ -2205,3 +2205,27 @@ END
 FROM table
 """
     assert format_sql(sql) == expected.strip()
+
+
+def test_interval_with_single_datetime_part():
+    sql = """select value
+    from table
+    where date(date) >= date_sub(current_date(), interval -5 hour)"""
+    expected = """
+SELECT value
+FROM table
+WHERE DATE(date) >= DATE_SUB(CURRENT_DATE(), INTERVAL -5 HOUR)
+"""
+    assert format_sql(sql) == expected.strip()
+
+
+def test_interval_with_datetime_part_range():
+    sql = """select value
+    from table
+    where date(date) >= date_sub(current_date(), interval '8 20 17' month to hour)"""
+    expected = """
+SELECT value
+FROM table
+WHERE DATE(date) >= DATE_SUB(CURRENT_DATE(), INTERVAL '8 20 17' MONTH TO HOUR)
+"""
+    assert format_sql(sql) == expected.strip()

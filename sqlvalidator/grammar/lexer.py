@@ -17,6 +17,7 @@ from sqlvalidator.grammar.sql import (
     Condition,
     CountFunctionCall,
     DatePartExtraction,
+    DateTimePart,
     ExceptClause,
     Expression,
     FilteredFunctionCall,
@@ -26,6 +27,7 @@ from sqlvalidator.grammar.sql import (
     HavingClause,
     Index,
     Integer,
+    Interval,
     Join,
     LimitClause,
     Negation,
@@ -595,6 +597,12 @@ class ExpressionParser:
             argument_tokens, next_token = get_tokens_until_one_of(tokens, [])
             next_token = next(tokens, None)
             expression = SelectStatementParser.parse(iter(argument_tokens))
+        elif lower(main_token) == "interval":
+            interval, next_token = ExpressionParser.parse(tokens, can_alias=False)
+            datetime_part, next_token = ExpressionParser.parse(
+                tokens, first_token=next_token
+            )
+            expression = Interval(interval, datetime_part)
         else:
             expression = None
 
@@ -750,6 +758,17 @@ class ExpressionParser:
                 expression = StringParser.parse(
                     tokens, start_quote=next_token, prefix=main_token
                 )
+            elif lower(main_token) in DateTimePart.PARTS:
+                cast_to = None
+                if next_token is not None and lower(next_token) == "to":
+                    next_token = next(tokens, None)
+                    if (
+                        next_token is not None
+                        and lower(next_token) in DateTimePart.PARTS
+                    ):
+                        cast_to = next_token
+                        next_token = next(tokens, None)
+                expression = DateTimePart(main_token, cast_to)
             else:
                 expression = Column(main_token)
 
