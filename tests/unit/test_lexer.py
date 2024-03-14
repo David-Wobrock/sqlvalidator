@@ -16,11 +16,13 @@ from sqlvalidator.grammar.sql import (
     Column,
     Condition,
     CountFunctionCall,
+    DateTimePart,
     ExceptClause,
     FunctionCall,
     GroupByClause,
     Index,
     Integer,
+    Interval,
     Join,
     LimitClause,
     Null,
@@ -965,4 +967,28 @@ def test_chained_columns_with_arithmetic_operator():
 def test_function_with_single_comma_string_param():
     actual, _ = ExpressionParser.parse(to_tokens("test(',')"))
     expected = FunctionCall("test", String(",", quotes="'"))
+    assert actual == expected
+
+
+def test_interval_with_single_datetime_part():
+    actual, _ = ExpressionParser.parse(to_tokens("INTERVAL -1 MONTH"))
+    expected = Interval(Integer(-1), DateTimePart("MONTH"))
+    assert actual == expected
+
+
+def test_interval_with_datetime_part_range():
+    actual, _ = ExpressionParser.parse(to_tokens("INTERVAL '8 -20 17' MONTH TO HOUR"))
+    expected = Interval(String("8 -20 17", quotes="'"), DateTimePart("MONTH", "HOUR"))
+    assert actual == expected
+
+
+def test_interval_in_function():
+    actual, _ = ExpressionParser.parse(
+        to_tokens("TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 30 SECOND)")
+    )
+    expected = FunctionCall(
+        "TIMESTAMP_ADD",
+        FunctionCall("CURRENT_TIMESTAMP"),
+        Interval(Integer(30), DateTimePart("SECOND")),
+    )
     assert actual == expected
