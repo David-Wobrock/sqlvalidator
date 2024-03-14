@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, List, Optional, Set
+from typing import Any, List, Optional, Set, Union
 
 from sqlvalidator.grammar.tokeniser import lower
 
@@ -1163,7 +1163,7 @@ class Table(Expression):
 
 class Unnest(Expression):
     def __init__(self, unnest_expression, with_offset, with_offset_as, offset_alias):
-        # unnest_expression: can be functiion call or alias of function call
+        # unnest_expression: can be function call or alias of function call
         super().__init__(unnest_expression)
         self.with_offset = with_offset
         self.with_offset_as = with_offset_as
@@ -1598,3 +1598,62 @@ class Case(Expression):
             case_str += "\n ELSE {}".format(transform(self.else_expression))
         case_str += "\nEND"
         return case_str
+
+
+class DateTimePart(Expression):
+    PARTS = (
+        "year",
+        "quarter",
+        "month",
+        "week",
+        "day",
+        "hour",
+        "minute",
+        "second",
+        "millisecond",
+        "microsecond",
+    )
+
+    def __init__(self, expression: str, ending_datetime_part: Union[str, None] = None):
+        super().__init__(expression.upper())
+        self.ending_datetime_part = (
+            ending_datetime_part.upper() if ending_datetime_part is not None else None
+        )
+
+    def __repr__(self):
+        return "<DateTimePart: {} range: {}>".format(
+            self.value, self.ending_datetime_part
+        )
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.value == other.value
+            and self.ending_datetime_part == other.ending_datetime_part
+        )
+
+    def __str__(self):
+        return (
+            "{}".format(self.value)
+            if self.ending_datetime_part is None
+            else "{} TO {}".format(self.value, self.ending_datetime_part)
+        )
+
+
+class Interval(Expression):
+    def __init__(self, interval, datetime_part):
+        self.interval = interval
+        self.datetime_part = datetime_part
+
+    def __repr__(self):
+        return "<Interval: {} {}>".format(self.interval, repr(self.datetime_part))
+
+    def __eq__(self, other):
+        return (
+            type(self) == type(other)
+            and self.interval == other.interval
+            and self.datetime_part == other.datetime_part
+        )
+
+    def __str__(self):
+        return "INTERVAL {} {}".format(self.interval, self.datetime_part)
